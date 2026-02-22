@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📺 Telewebion Kanaler</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      background: linear-gradient(135deg, #0a1f3b, #1a3b5c); 
+      color: #fff; 
+      min-height: 100vh;
+    }
+    .header { 
+      background: rgba(0,0,0,0.4); 
+      padding: 25px 20px; 
+      text-align: center; 
+      border-bottom: 3px solid #4ecca3;
+    }
+    .header h1 { 
+      font-size: 2.8em; 
+      color: #4ecca3; 
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    .header p { 
+      font-size: 1.2em; 
+      opacity: 0.9;
+    }
+    .stats {
+      margin-top: 10px;
+      font-size: 1.1em;
+      color: #ffd700;
+    }
+    .container { 
+      display: flex; 
+      height: calc(100vh - 170px); 
+      padding: 20px; 
+      gap: 20px; 
+    }
+    .channel-list { 
+      width: 320px; 
+      background: rgba(0,0,0,0.5); 
+      backdrop-filter: blur(5px);
+      overflow-y: auto; 
+      border-radius: 15px; 
+      padding: 15px; 
+      border: 1px solid rgba(78,204,163,0.3);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .channel-list h3 {
+      color: #4ecca3;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #4ecca3;
+      font-size: 1.4em;
+    }
+    .video-container { 
+      flex: 1; 
+      background: #000; 
+      border-radius: 15px; 
+      overflow: hidden; 
+      display: flex; 
+      flex-direction: column;
+      border: 1px solid #4ecca3;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+    }
+    .video-header { 
+      background: rgba(0,0,0,0.9); 
+      padding: 18px 20px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      border-bottom: 1px solid #4ecca3;
+    }
+    .video-title { 
+      font-size: 1.5em; 
+      color: #4ecca3;
+      font-weight: bold;
+    }
+    .video-controls { 
+      display: flex; 
+      gap: 12px; 
+    }
+    .btn { 
+      background: #4ecca3; 
+      color: #0a1f3b; 
+      border: none; 
+      padding: 8px 18px; 
+      border-radius: 25px; 
+      cursor: pointer; 
+      font-weight: bold;
+      font-size: 0.95em;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .btn:hover { 
+      background: #3bb083; 
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(78,204,163,0.4);
+    }
+    .btn.outline {
+      background: transparent;
+      border: 1px solid #4ecca3;
+      color: #4ecca3;
+    }
+    .btn.outline:hover {
+      background: rgba(78,204,163,0.2);
+    }
+    .video-wrapper { 
+      flex: 1; 
+      position: relative; 
+      background: #000; 
+    }
+    iframe { 
+      width: 100%; 
+      height: 100%; 
+      border: none; 
+    }
+    .error-msg { 
+      text-align: center; 
+      padding: 50px;
+      color: #999;
+    }
+    .error-msg h3 {
+      font-size: 2em;
+      margin-bottom: 20px;
+      color: #4ecca3;
+    }
+    .channel-item { 
+      padding: 14px 15px; 
+      margin: 8px 0; 
+      cursor: pointer; 
+      border-radius: 12px; 
+      background: rgba(255,255,255,0.08); 
+      transition: all 0.2s;
+      border-left: 4px solid transparent;
+      font-size: 1.05em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .channel-item:hover { 
+      background: rgba(78,204,163,0.25); 
+      transform: translateX(5px);
+      border-left-color: #4ecca3;
+    }
+    .channel-item.active { 
+      background: rgba(78,204,163,0.4); 
+      border-left-color: #ffd700;
+      font-weight: bold;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .channel-icon {
+      font-size: 1.3em;
+    }
+    .channel-count {
+      display: inline-block;
+      background: #4ecca3;
+      color: #0a1f3b;
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 0.8em;
+      margin-left: 10px;
+      font-weight: bold;
+    }
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #4ecca3; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3bb083; }
+    
+    @media (max-width: 768px) {
+      .container { flex-direction: column; height: auto; }
+      .channel-list { width: 100%; max-height: 300px; }
+      .header h1 { font-size: 2em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📡 TELEWEBION KANALER</h1>
+    <p>Alla tillgängliga kanaler från telewebion.ir</p>
+    <div class="stats" id="channel-count">Laddar kanaler...</div>
+  </div>
+
+  <div class="container">
+    <aside class="channel-list">
+      <h3>📺 Kanaler <span class="channel-count" id="count-badge">0</span></h3>
+      <div id="channel-container"></div>
+    </aside>
+    
+    <main class="video-container">
+      <div class="video-header">
+        <div class="video-title" id="current-channel">Välj en kanal</div>
+        <div class="video-controls">
+          <button class="btn outline" onclick="toggleFullscreen()">⛶ Fullskärm</button>
+          <button class="btn" onclick="reloadChannel()">↻ Ladda om</button>
+        </div>
+      </div>
+      <div class="video-wrapper" id="video-wrapper">
+        <div class="error-msg">
+          <h3>👈 Välj en kanal från listan</h3>
+          <p>Klicka på valfri kanal för att starta streaming</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ALLA TELEWEBION KANALER
+    const telewebionChannels = [
+      { name: 'TV1', url: 'https://telewebion.ir/live/tv1', icon: '📡' },
+      { name: 'TV2', url: 'https://telewebion.ir/live/tv2', icon: '📡' },
+      { name: 'TV3', url: 'https://telewebion.ir/live/tv3', icon: '📡' },
+      { name: 'TV4', url: 'https://telewebion.ir/live/tv4', icon: '📡' },
+      { name: 'TAMASHA', url: 'https://telewebion.ir/live/hdtest', icon: '🎭' },
+      { name: 'POOYA', url: 'https://telewebion.ir/live/pooya', icon: '🧸' },
+      { name: 'IFILM', url: 'https://telewebion.ir/live/ifilm', icon: '🎬' },
+      { name: 'NAMAYESH', url: 'https://telewebion.ir/live/namayesh', icon: '🎪' },
+      { name: 'TEHRAN', url: 'https://telewebion.ir/live/tehran', icon: '🏙️' },
+      { name: 'MOSTANAD', url: 'https://telewebion.ir/live/mostanad', icon: '📽️' },
+      { name: 'QURAN', url: 'https://telewebion.ir/live/quran', icon: '📖' },
+      { name: 'AMOUZESH', url: 'https://telewebion.ir/live/amouzesh', icon: '📚' },
+      { name: 'SALAMAT', url: 'https://telewebion.ir/live/salamat', icon: '💚' },
+      { name: 'OFOGH', url: 'https://telewebion.ir/live/ofogh', icon: '🌟' },
+      { name: 'OMID', url: 'https://telewebion.ir/live/omid', icon: '⭐' },
+      { name: 'SEPEHR', url: 'https://telewebion.ir/live/sepehr', icon: '🕌' },
+      { name: 'FARATAR', url: 'https://telewebion.ir/live/faratar', icon: '✨' },
+      { name: 'IRINN', url: 'https://telewebion.ir/live/irinn', icon: '📰' },
+      { name: 'IRINN2', url: 'https://telewebion.ir/live/irinn2', icon: '📰' },
+      { name: 'Javaneh', url: 'https://telewebion.ir/live/javaneh', icon: '🧑' },
+      { name: 'Nava', url: 'https://telewebion.ir/live/nava', icon: '🎵' },
+      { name: 'Nama', url: 'https://telewebion.ir/live/nama', icon: '🎼' },
+      { name: 'Roya', url: 'https://telewebion.ir/live/iribu', icon: '👑' },
+      { name: 'URMIA', url: 'https://telewebion.ir/live/azarbayjangharbi', icon: '🌍' },
+      { name: 'SAHAND', url: 'https://telewebion.ir/live/sahand', icon: '⛰️' },
+      { name: 'ALBORZ', url: 'https://telewebion.ir/live/alborz', icon: '🏔️' },
+      { name: 'ESFAHAN', url: 'https://telewebion.ir/live/esfahan', icon: '🕌' },
+      { name: 'SABALAN', url: 'https://telewebion.ir/live/sabalan', icon: '🗻' },
+      { name: 'ILAM', url: 'https://telewebion.ir/live/ilam', icon: '🏞️' },
+      { name: 'BUSHEHR', url: 'https://telewebion.ir/live/bushehr', icon: '🌊' },
+      { name: 'JAHANBIN', url: 'https://telewebion.ir/live/jahanbin', icon: '🔭' },
+      { name: 'ABADAN', url: 'https://telewebion.ir/live/abadan', icon: '🏭' },
+      { name: 'KH.RAZAVI', url: 'https://telewebion.ir/live/khorasanrazavi', icon: '🕌' },
+      { name: 'ATRAK', url: 'https://telewebion.ir/live/atrak', icon: '🌊' },
+      { name: 'KHALIJFARS', url: 'https://telewebion.ir/live/khalijefars', icon: '🌊' },
+      { name: 'KHOZESTAN', url: 'https://telewebion.ir/live/khoozestan', icon: '🏜️' },
+      { name: 'ESHRAGH', url: 'https://telewebion.ir/live/eshragh', icon: '✨' },
+      { name: 'SEMNAN', url: 'https://telewebion.ir/live/semnan', icon: '🏜️' },
+      { name: 'HAMON', url: 'https://telewebion.ir/live/hamoon', icon: '🏞️' },
+      { name: 'FARS', url: 'https://telewebion.ir/live/fars', icon: '🏛️' },
+      { name: 'GHAZVIN', url: 'https://telewebion.ir/live/qazvin', icon: '🏛️' },
+      { name: 'NOOR', url: 'https://telewebion.ir/live/noor', icon: '💡' },
+      { name: 'LORESTAN', url: 'https://telewebion.ir/live/aflak', icon: '🏞️' },
+      { name: 'KERMAN', url: 'https://telewebion.ir/live/kerman', icon: '🏜️' },
+      { name: 'ZAGROS', url: 'https://telewebion.ir/live/zagros', icon: '⛰️' },
+      { name: 'DENA', url: 'https://telewebion.ir/live/dena', icon: '⛰️' },
+      { name: 'KISH', url: 'https://telewebion.ir/live/kish', icon: '🏝️' },
+      { name: 'GOLESTAN', url: 'https://telewebion.ir/live/sabz', icon: '🌳' },
+      { name: 'BARAN', url: 'https://telewebion.ir/live/baran', icon: '☔' },
+      { name: 'KORDESTAN', url: 'https://telewebion.ir/live/kordestan', icon: '🏔️' },
+      { name: 'YAZD', url: 'https://telewebion.ir/live/taban', icon: '🏜️' },
+      { name: 'TABARESTAN', url: 'https://telewebion.ir/live/tabarestan', icon: '🌳' },
+      { name: 'AFTAB', url: 'https://telewebion.ir/live/aftab', icon: '☀️' },
+      { name: 'MAHABAD', url: 'https://telewebion.ir/live/mahabad', icon: '🏞️' },
+      { name: 'HAMADAN', url: 'https://telewebion.ir/live/sina', icon: '🏛️' },
+      { name: 'KHAVARAN', url: 'https://telewebion.ir/live/khavaran', icon: '🌅' },
+      { name: '1+', url: 'https://telewebion.ir/live/tv1plus', icon: '➕' },
+      { name: 'HABIB', url: 'https://telewebion.ir/live/habib', icon: '🤝' },
+      { name: 'SARBEDARAN', url: 'https://telewebion.ir/live/sarbedaran', icon: '⚔️' },
+      { name: 'NESFEJAHAN', url: 'https://telewebion.ir/live/nesfejahan', icon: '🌓' },
+      { name: 'IRIB Kurdistan', url: 'https://telewebion.ir/live/tv-kurdistan', icon: '🏔️' }
+    ];
+
+    // Sortera kanalerna i bokstavsordning
+    telewebionChannels.sort((a, b) => a.name.localeCompare(b.name));
+
+    let currentChannel = null;
+
+    // Uppdatera kanalräknare
+    document.getElementById('channel-count').textContent = `Totalt ${telewebionChannels.length} kanaler`;
+    document.getElementById('count-badge').textContent = telewebionChannels.length;
+
+    // Rendera kanallista
+    function renderChannels() {
+      const container = document.getElementById('channel-container');
+      let html = '';
+      
+      telewebionChannels.forEach(ch => {
+        const isActive = currentChannel && currentChannel.url === ch.url ? 'active' : '';
+        html += `
+          <div class="channel-item ${isActive}" onclick="playChannel('${ch.url.replace(/'/g, "\\'")}', '${ch.name.replace(/'/g, "\\'")}', '${ch.icon}')">
+            <span class="channel-icon">${ch.icon}</span>
+            <span>${ch.name}</span>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    // Spela kanal
+    function playChannel(url, name, icon) {
+      currentChannel = { url, name, icon };
+      document.getElementById('current-channel').innerHTML = `${icon} ${name}`;
+      
+      const wrapper = document.getElementById('video-wrapper');
+      
+      // Specialanpassad iframe för telewebion - zoomar in på videon
+      wrapper.innerHTML = `
+        <div style="width:100%;height:100%;overflow:hidden;background:#000;position:relative;">
+          <iframe 
+            src="${url}" 
+            allowfullscreen 
+            allow="autoplay; fullscreen" 
+            style="width:200%;height:200%;transform:scale(0.5) translateY(-12%);transform-origin:0 0;border:none;"
+            frameborder="0">
+          </iframe>
+        </div>
+      `;
+      
+      renderChannels(); // Uppdatera active state
+    }
+
+    // Ladda om kanal
+    function reloadChannel() {
+      if (currentChannel) {
+        playChannel(currentChannel.url, currentChannel.name, currentChannel.icon);
+      }
+    }
+
+    // Fullskärm
+    function toggleFullscreen() {
+      const wrapper = document.getElementById('video-wrapper');
+      if (!document.fullscreenElement) {
+        wrapper.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // Initiera
+    renderChannels();
+  </script>
+</body>
+</html>
