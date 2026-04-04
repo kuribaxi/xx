@@ -29,6 +29,8 @@
     video, iframe { width: 100%; height: 100%; object-fit: contain; border: none; background: black; }
     .error-msg { text-align: center; padding: 40px; color: #ffbb99; }
     .category-title { font-weight: 700; font-size: 1.1rem; padding: 12px 6px 6px 6px; color: #4ecca3; border-bottom: 2px solid #4ecca3; margin: 12px 0 8px 0; letter-spacing: -0.2px; }
+    /* Subgroup titles */
+    .subgroup-title { font-weight: 600; font-size: 0.82rem; padding: 8px 10px 4px 10px; color: #a8e6d2; border-left: 3px solid #4ecca3; margin: 10px 0 4px 4px; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.85; background: rgba(78,204,163,0.07); border-radius: 0 8px 8px 0; }
     .channel-item { padding: 9px 12px; margin: 6px 0; cursor: grab; border-radius: 20px; transition: all 0.2s; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); backdrop-filter: blur(2px); user-select: none; }
     .channel-item:active { cursor: grabbing; }
     .channel-item.drag-over { border: 2px dashed #4ecca3; background: #4ecca355; }
@@ -59,8 +61,11 @@
 
 <div class="nav-buttons">
   <button class="nav-btn active" onclick="showAll(this)">🎞 Alla kanaler</button>
-  <button class="nav-btn" onclick="filterCat(this,'telewebion')">📡 Telewebion</button>
-  <button class="nav-btn" onclick="filterCat(this,'ifilm')">🎬 iFilm (4 st)</button>
+  <button class="nav-btn" onclick="filterSubgroup(this,'sarasari')">🌐 Sarasari</button>
+  <button class="nav-btn" onclick="filterSubgroup(this,'ostani')">🏙️ Ostani</button>
+  <button class="nav-btn" onclick="filterSubgroup(this,'ekhtesasi')">🎯 Ekhtesasi</button>
+  <button class="nav-btn" onclick="filterSubgroup(this,'radio')">📻 Radio</button>
+  <button class="nav-btn" onclick="filterCat(this,'ifilm')">🎬 iFilm</button>
 </div>
 
 <div class="container">
@@ -97,77 +102,104 @@
 </div>
 
 <script>
-  const telewebionRaw = [
-    { name: 'TV1',          url: 'https://live-azd1102.telewebion.ir/ek/tv1/live/1080p/index.m3u8',                icon: '📡' },
-    { name: 'TV2',          url: 'https://live-azd1102.telewebion.ir/ek/tv2/live/1080p/index.m3u8',                icon: '📡' },
-    { name: 'TV3',          url: 'https://live-azd1102.telewebion.ir/ek/tv3/live/1080p/index.m3u8',                icon: '📡' },
-    { name: 'TV4',          url: 'https://live-azd1102.telewebion.ir/ek/tv4/live/576p/index.m3u8',                icon: '📡' },
-    { name: 'TAMASHA',      url: 'https://live-azd1102.telewebion.ir/ek/hdtest/live/1080p/index.m3u8',             icon: '🎭' },
-    { name: 'POOYA',        url: 'https://live-azd1102.telewebion.ir/ek/pooya/live/1080p/index.m3u8',              icon: '🧸' },
-    { name: 'IFILM',        url: 'https://live-azd1102.telewebion.ir/ek/ifilm/live/1080p/index.m3u8',              icon: '🎬' },
-    { name: 'NAMAYESH',     url: 'https://live-azd1102.telewebion.ir/ek/namayesh/live/1080p/index.m3u8',           icon: '🎪' },
-    { name: 'TEHRAN',       url: 'https://live-azd1102.telewebion.ir/ek/tehran/live/576p/index.m3u8',             icon: '🏙️' },
-    { name: 'MOSTANAD',     url: 'https://live-azd1102.telewebion.ir/ek/mostanad/live/1080p/index.m3u8',           icon: '📽️' },
-    { name: 'QURAN',        url: 'https://live-azd1102.telewebion.ir/ek/quran/live/1080p/index.m3u8',              icon: '📖' },
-    { name: 'AMOUZESH',     url: 'https://live-azd1102.telewebion.ir/ek/amouzesh/live/576p/index.m3u8',           icon: '📚' },
-    { name: 'SALAMAT',      url: 'https://live-azd1102.telewebion.ir/ek/salamat/live/576p/index.m3u8',            icon: '💚' },
-    { name: 'OFOGH',        url: 'https://live-azd1102.telewebion.ir/ek/ofogh/live/1080p/index.m3u8',              icon: '🌟' },
-    { name: 'OMID',         url: 'https://live-azd1102.telewebion.ir/ek/omid/live/576p/index.m3u8',               icon: '⭐' },
-    { name: 'SEPEHR',       url: 'https://live-azd1102.telewebion.ir/ek/sepehr/live/1080p/index.m3u8',             icon: '🕌' },
-    { name: 'IRINN',        url: 'https://live-azd1102.telewebion.ir/ek/irinn/live/1080p/index.m3u8',              icon: '📰' },
-    { name: 'TV1+',      url: 'https://live-azd1102.telewebion.ir/ek/tv1plus/live/1080p/index.m3u8',            icon: '🧑' },
-    { name: 'Nava',         url: 'https://live-azd1102.telewebion.ir/ek/nava/live/1080p/index.m3u8',               icon: '🎵' },
-    { name: 'Nama',         url: 'https://live-azd1102.telewebion.ir/ek/nama/live/1080p/index.m3u8',               icon: '🎼' },
-    { name: 'URMIA',  url: 'https://live-azd1102.telewebion.ir/ek/azarbayjangharbi/live/576p/index.m3u8',   icon: '🌍' },
-    { name: 'SAHAND',       url: 'https://live-azd1102.telewebion.ir/ek/sahand/live/1080p/index.m3u8',             icon: '⛰️' },
-    { name: 'ALBORZ',       url: 'https://live-azd1102.telewebion.ir/ek/alborz/live/1080p/index.m3u8',             icon: '🏔️' },
-    { name: 'ESFAHAN',      url: 'https://live-azd1102.telewebion.ir/ek/esfahan/live/1080p/index.m3u8',            icon: '🕌' },
-    { name: 'SABALAN',      url: 'https://live-azd1102.telewebion.ir/ek/sabalan/live/1080p/index.m3u8',            icon: '🗻' },
-    { name: 'ILAM',         url: 'https://live-azd1102.telewebion.ir/ek/ilam/live/576p/index.m3u8',               icon: '🏞️' },
-    { name: 'BUSHEHR',      url: 'https://live-azd1102.telewebion.ir/ek/bushehr/live/1080p/index.m3u8',            icon: '🌊' },
-    { name: 'JAHANBIN',     url: 'https://live-azd1102.telewebion.ir/ek/jahanbin/live/1080p/index.m3u8',           icon: '🔭' },
-    { name: 'ABADAN',       url: 'https://live-azd1102.telewebion.ir/ek/abadan/live/1080p/index.m3u8',             icon: '🏭' },
-    { name: 'KH.RAZAVI',    url: 'https://live-azd1102.telewebion.ir/ek/khorasanrazavi/live/1080p/index.m3u8',     icon: '🕌' },
-    { name: 'ATRAK',        url: 'https://live-azd1102.telewebion.ir/ek/atrak/live/1080p/index.m3u8',              icon: '🌊' },
-    { name: 'KHALIJFARS',   url: 'https://live-azd1102.telewebion.ir/ek/khalijefars/live/1080p/index.m3u8',        icon: '🌊' },
-    { name: 'KHOZESTAN',    url: 'https://live-azd1102.telewebion.ir/ek/khoozestan/live/1080p/index.m3u8',         icon: '🏜️' },
-    { name: 'ESHRAGH',      url: 'https://live-azd1102.telewebion.ir/ek/eshragh/live/1080p/index.m3u8',            icon: '✨' },
-    { name: 'SEMNAN',       url: 'https://live-azd1102.telewebion.ir/ek/semnan/live/1080p/index.m3u8',             icon: '🏜️' },
-    { name: 'HAMON',        url: 'https://live-azd1102.telewebion.ir/ek/hamoon/live/1080p/index.m3u8',             icon: '🏞️' },
-    { name: 'FARS',         url: 'https://live-azd1102.telewebion.ir/ek/fars/live/1080p/index.m3u8',               icon: '🏛️' },
-    { name: 'GHAZVIN',      url: 'https://live-azd1102.telewebion.ir/ek/qazvin/live/1080p/index.m3u8',             icon: '🏛️' },
-    { name: 'NOOR',         url: 'https://live-azd1102.telewebion.ir/ek/noor/live/1080p/index.m3u8',               icon: '💡' },
-    { name: 'LORESTAN',     url: 'https://live-azd1102.telewebion.ir/ek/aflak/live/1080p/index.m3u8',              icon: '🏞️' },
-    { name: 'KERMAN',       url: 'https://live-azd1102.telewebion.ir/ek/kerman/live/1080p/index.m3u8',             icon: '🏜️' },
-    { name: 'ZAGROS',       url: 'https://live-azd1102.telewebion.ir/ek/zagros/live/1080p/index.m3u8',             icon: '⛰️' },
-    { name: 'DENA',         url: 'https://live-azd1102.telewebion.ir/ek/dena/live/1080p/index.m3u8',               icon: '⛰️' },
-    { name: 'KISH',         url: 'https://live-azd1102.telewebion.ir/ek/kish/live/576p/index.m3u8',               icon: '🏝️' },
-    { name: 'GOLESTAN',     url: 'https://live-azd1102.telewebion.ir/ek/sabz/live/576p/index.m3u8',               icon: '🌳' },
-    { name: 'BARAN',        url: 'https://live-azd1102.telewebion.ir/ek/baran/live/576p/index.m3u8',              icon: '☔' },
-    { name: 'KORDESTAN',    url: 'https://live-azd1102.telewebion.ir/ek/kordestan/live/1080p/index.m3u8',          icon: '🏔️' },
-    { name: 'YAZD',         url: 'https://live-azd1102.telewebion.ir/ek/taban/live/1080p/index.m3u8',              icon: '🏜️' },
-    { name: 'TABARESTAN',   url: 'https://live-azd1102.telewebion.ir/ek/tabarestan/live/1080p/index.m3u8',         icon: '🌳' },
-    { name: 'AFTAB',        url: 'https://live-azd1102.telewebion.ir/ek/aftab/live/1080p/index.m3u8',              icon: '☀️' },
-    { name: 'MAHABAD',      url: 'https://live-azd1102.telewebion.ir/ek/mahabad/live/1080p/index.m3u8',            icon: '🏞️' },
-    { name: 'HAMADAN',      url: 'https://live-azd1102.telewebion.ir/ek/sina/live/1080p/index.m3u8',               icon: '🏛️' },
-    { name: 'KHAVARAN',     url: 'https://live-azd1102.telewebion.ir/ek/khavaran/live/1080p/index.m3u8',           icon: '🌅' },
-    { name: 'HABIB',        url: 'https://live-azd1102.telewebion.ir/ek/habib/live/720p/index.m3u8',              icon: '🤝' },
-    { name: 'Golkhane',    url: 'https://live-azd1106.telewebion.ir/ek/golkhane/live/720p/index.m3u8',              icon: '🌐' },
-    { name: 'Labbayk',    url: 'https://live-azd1104.telewebion.ir/ek/labbayk/live/720p/index.m3u8',              icon: '🌐' },
-    { name: 'Maddahi',    url: 'https://live-azd1111.telewebion.ir/ek/tekyemadahi/live/720p/index.m3u8',              icon: '🌐' },
-    { name: 'Energi',     url: 'https://live-azd1112.telewebion.ir/ek/baenergy/live/1080p/index.m3u8',            icon: '🎬' },
-    { name: 'Velayat',      url: 'https://live-azd1102.telewebion.ir/ek/velayat/live/720p/index.m3u8',            icon: '📖' },
-    { name: 'Karoon',          url: 'https://live-azd1110.telewebion.ir/ek/karoon/live/1080p/index.m3u8',                icon: '🎨' },
-    { name: 'Palestine',         url: 'https://live-azd1113.telewebion.ir/ek/palestine/live/720p/index.m3u8',               icon: '📅' },
-    { name: 'Nesfejahan',      url: 'https://live-azd1109.telewebion.ir/ek/nesfejahan/live/576p/index.m3u8',            icon: '🌿' },
-    { name: 'Radioava',      url: 'https://live-azd1103.telewebion.ir/ek/radioava/live/576p/index.m3u8',            icon: '🕌' },
-    { name: 'Radionamayesh',          url: 'https://live-azd1101.telewebion.ir/ek/radionamayesh/live/576p/index.m3u8',                icon: '🎵' },
-    { name: 'radiotehran',        url: 'https://live-azd1103.telewebion.ir/ek/radiotehran/live/576p/index.m3u8',              icon: '👥' },
-    { name: 'Radiopayam',     url: 'hhttps://live-azd1109.telewebion.ir/ek/radiopayam/live/576p/index.m3u8',           icon: '🛍️' },
-    { name: 'Radiosalamat',     url: 'https://live-azd1103.telewebion.ir/ek/radiosalamat/live/576p/index.m3u8',           icon: '🛍️' },
-    { name: 'Radiotartil',     url: 'https://live-azd1107.telewebion.ir/ek/radiotartil/live/576p/index.m3u8',           icon: '🛍️' },
-    { name: 'RadioIRAN',     url: 'https://live-azd1113.telewebion.ir/ek/radioiran/live/576p/index.m3u8',           icon: '🛍️' },
-  ];
+  // ---- Subgroup definitions for Telewebion ----
+  const subgroups = {
+    telewebion: [
+      {
+        key: 'sarasari',
+        label: '🌐 Sarasari',
+        channels: [
+          { name: 'TV1',      url: 'https://live-azd1102.telewebion.ir/ek/tv1/live/1080p/index.m3u8',      icon: '📡' },
+          { name: 'TV2',      url: 'https://live-azd1102.telewebion.ir/ek/tv2/live/1080p/index.m3u8',      icon: '📡' },
+          { name: 'TV3',      url: 'https://live-azd1102.telewebion.ir/ek/tv3/live/1080p/index.m3u8',      icon: '📡' },
+          { name: 'TV4',      url: 'https://live-azd1102.telewebion.ir/ek/tv4/live/576p/index.m3u8',       icon: '📡' },
+          { name: 'TAMASHA',  url: 'https://live-azd1102.telewebion.ir/ek/hdtest/live/1080p/index.m3u8',   icon: '🎭' },
+          { name: 'POOYA',    url: 'https://live-azd1102.telewebion.ir/ek/pooya/live/1080p/index.m3u8',    icon: '🧸' },
+          { name: 'IFILM',    url: 'https://live-azd1102.telewebion.ir/ek/ifilm/live/1080p/index.m3u8',    icon: '🎬' },
+          { name: 'NAMAYESH', url: 'https://live-azd1102.telewebion.ir/ek/namayesh/live/1080p/index.m3u8', icon: '🎪' },
+          { name: 'TEHRAN',   url: 'https://live-azd1102.telewebion.ir/ek/tehran/live/576p/index.m3u8',    icon: '🏙️' },
+          { name: 'MOSTANAD', url: 'https://live-azd1102.telewebion.ir/ek/mostanad/live/1080p/index.m3u8', icon: '📽️' },
+          { name: 'QURAN',    url: 'https://live-azd1102.telewebion.ir/ek/quran/live/1080p/index.m3u8',    icon: '📖' },
+          { name: 'AMOUZESH', url: 'https://live-azd1102.telewebion.ir/ek/amouzesh/live/576p/index.m3u8',  icon: '📚' },
+          { name: 'SALAMAT',  url: 'https://live-azd1102.telewebion.ir/ek/salamat/live/576p/index.m3u8',   icon: '💚' },
+          { name: 'OFOGH',    url: 'https://live-azd1102.telewebion.ir/ek/ofogh/live/1080p/index.m3u8',    icon: '🌟' },
+          { name: 'OMID',     url: 'https://live-azd1102.telewebion.ir/ek/omid/live/576p/index.m3u8',      icon: '⭐' },
+          { name: 'SEPEHR',   url: 'https://live-azd1102.telewebion.ir/ek/sepehr/live/1080p/index.m3u8',   icon: '🕌' },
+          { name: 'IRINN',    url: 'https://live-azd1102.telewebion.ir/ek/irinn/live/1080p/index.m3u8',    icon: '📰' },
+          { name: 'TV1+',     url: 'https://live-azd1102.telewebion.ir/ek/tv1plus/live/1080p/index.m3u8',  icon: '🧑' },
+          { name: 'Nava',     url: 'https://live-azd1102.telewebion.ir/ek/nava/live/1080p/index.m3u8',     icon: '🎵' },
+          { name: 'Nama',     url: 'https://live-azd1102.telewebion.ir/ek/nama/live/1080p/index.m3u8',     icon: '🎼' },
+        ]
+      },
+      {
+        key: 'ostani',
+        label: '🏙️ Ostani',
+        channels: [
+          { name: 'URMIA',      url: 'https://live-azd1102.telewebion.ir/ek/azarbayjangharbi/live/576p/index.m3u8',  icon: '🌍' },
+          { name: 'SAHAND',     url: 'https://live-azd1102.telewebion.ir/ek/sahand/live/1080p/index.m3u8',           icon: '⛰️' },
+          { name: 'ALBORZ',     url: 'https://live-azd1102.telewebion.ir/ek/alborz/live/1080p/index.m3u8',           icon: '🏔️' },
+          { name: 'ESFAHAN',    url: 'https://live-azd1102.telewebion.ir/ek/esfahan/live/1080p/index.m3u8',          icon: '🕌' },
+          { name: 'SABALAN',    url: 'https://live-azd1102.telewebion.ir/ek/sabalan/live/1080p/index.m3u8',          icon: '🗻' },
+          { name: 'ILAM',       url: 'https://live-azd1102.telewebion.ir/ek/ilam/live/576p/index.m3u8',              icon: '🏞️' },
+          { name: 'BUSHEHR',    url: 'https://live-azd1102.telewebion.ir/ek/bushehr/live/1080p/index.m3u8',          icon: '🌊' },
+          { name: 'JAHANBIN',   url: 'https://live-azd1102.telewebion.ir/ek/jahanbin/live/1080p/index.m3u8',         icon: '🔭' },
+          { name: 'ABADAN',     url: 'https://live-azd1102.telewebion.ir/ek/abadan/live/1080p/index.m3u8',           icon: '🏭' },
+          { name: 'KH.RAZAVI',  url: 'https://live-azd1102.telewebion.ir/ek/khorasanrazavi/live/1080p/index.m3u8',   icon: '🕌' },
+          { name: 'ATRAK',      url: 'https://live-azd1102.telewebion.ir/ek/atrak/live/1080p/index.m3u8',            icon: '🌊' },
+          { name: 'KHALIJFARS', url: 'https://live-azd1102.telewebion.ir/ek/khalijefars/live/1080p/index.m3u8',      icon: '🌊' },
+          { name: 'KHOZESTAN',  url: 'https://live-azd1102.telewebion.ir/ek/khoozestan/live/1080p/index.m3u8',       icon: '🏜️' },
+          { name: 'ESHRAGH',    url: 'https://live-azd1102.telewebion.ir/ek/eshragh/live/1080p/index.m3u8',          icon: '✨' },
+          { name: 'SEMNAN',     url: 'https://live-azd1102.telewebion.ir/ek/semnan/live/1080p/index.m3u8',           icon: '🏜️' },
+          { name: 'HAMON',      url: 'https://live-azd1102.telewebion.ir/ek/hamoon/live/1080p/index.m3u8',           icon: '🏞️' },
+          { name: 'FARS',       url: 'https://live-azd1102.telewebion.ir/ek/fars/live/1080p/index.m3u8',             icon: '🏛️' },
+          { name: 'GHAZVIN',    url: 'https://live-azd1102.telewebion.ir/ek/qazvin/live/1080p/index.m3u8',           icon: '🏛️' },
+          { name: 'NOOR',       url: 'https://live-azd1102.telewebion.ir/ek/noor/live/1080p/index.m3u8',             icon: '💡' },
+          { name: 'LORESTAN',   url: 'https://live-azd1102.telewebion.ir/ek/aflak/live/1080p/index.m3u8',            icon: '🏞️' },
+          { name: 'KERMAN',     url: 'https://live-azd1102.telewebion.ir/ek/kerman/live/1080p/index.m3u8',           icon: '🏜️' },
+          { name: 'ZAGROS',     url: 'https://live-azd1102.telewebion.ir/ek/zagros/live/1080p/index.m3u8',           icon: '⛰️' },
+          { name: 'DENA',       url: 'https://live-azd1102.telewebion.ir/ek/dena/live/1080p/index.m3u8',             icon: '⛰️' },
+          { name: 'KISH',       url: 'https://live-azd1102.telewebion.ir/ek/kish/live/576p/index.m3u8',              icon: '🏝️' },
+          { name: 'GOLESTAN',   url: 'https://live-azd1102.telewebion.ir/ek/sabz/live/576p/index.m3u8',              icon: '🌳' },
+          { name: 'BARAN',      url: 'https://live-azd1102.telewebion.ir/ek/baran/live/576p/index.m3u8',             icon: '☔' },
+          { name: 'KORDESTAN',  url: 'https://live-azd1102.telewebion.ir/ek/kordestan/live/1080p/index.m3u8',        icon: '🏔️' },
+          { name: 'YAZD',       url: 'https://live-azd1102.telewebion.ir/ek/taban/live/1080p/index.m3u8',            icon: '🏜️' },
+          { name: 'TABARESTAN', url: 'https://live-azd1102.telewebion.ir/ek/tabarestan/live/1080p/index.m3u8',       icon: '🌳' },
+          { name: 'AFTAB',      url: 'https://live-azd1102.telewebion.ir/ek/aftab/live/1080p/index.m3u8',            icon: '☀️' },
+          { name: 'MAHABAD',    url: 'https://live-azd1102.telewebion.ir/ek/mahabad/live/1080p/index.m3u8',          icon: '🏞️' },
+          { name: 'HAMADAN',    url: 'https://live-azd1102.telewebion.ir/ek/sina/live/1080p/index.m3u8',             icon: '🏛️' },
+          { name: 'KHAVARAN',   url: 'https://live-azd1102.telewebion.ir/ek/khavaran/live/1080p/index.m3u8',         icon: '🌅' },
+        ]
+      },
+      {
+        key: 'ekhtesasi',
+        label: '🎯 Ekhtesasi',
+        channels: [
+          { name: 'HABIB',        url: 'https://live-azd1102.telewebion.ir/ek/habib/live/720p/index.m3u8',              icon: '🤝' },
+          { name: 'Golkhane',     url: 'https://live-azd1106.telewebion.ir/ek/golkhane/live/720p/index.m3u8',           icon: '🌐' },
+          { name: 'Labbayk',      url: 'https://live-azd1104.telewebion.ir/ek/labbayk/live/720p/index.m3u8',            icon: '🌐' },
+          { name: 'Maddahi',      url: 'https://live-azd1111.telewebion.ir/ek/tekyemadahi/live/720p/index.m3u8',        icon: '🌐' },
+          { name: 'Energi',       url: 'https://live-azd1112.telewebion.ir/ek/baenergy/live/1080p/index.m3u8',          icon: '🎬' },
+          { name: 'Velayat',      url: 'https://live-azd1102.telewebion.ir/ek/velayat/live/720p/index.m3u8',            icon: '📖' },
+          { name: 'Karoon',       url: 'https://live-azd1110.telewebion.ir/ek/karoon/live/1080p/index.m3u8',            icon: '🎨' },
+          { name: 'Palestine',    url: 'https://live-azd1113.telewebion.ir/ek/palestine/live/720p/index.m3u8',          icon: '📅' },
+          { name: 'Nesfejahan',   url: 'https://live-azd1109.telewebion.ir/ek/nesfejahan/live/576p/index.m3u8',         icon: '🌿' },
+        ]
+      },
+      {
+        key: 'radio',
+        label: '📻 Radio',
+        channels: [
+          { name: 'Radio Ava',       url: 'https://live-azd1103.telewebion.ir/ek/radioava/live/576p/index.m3u8',        icon: '🕌' },
+          { name: 'Radio Namayesh',  url: 'https://live-azd1101.telewebion.ir/ek/radionamayesh/live/576p/index.m3u8',   icon: '🎵' },
+          { name: 'Radio Tehran',    url: 'https://live-azd1103.telewebion.ir/ek/radiotehran/live/576p/index.m3u8',     icon: '👥' },
+          { name: 'Radio Payam',     url: 'https://live-azd1109.telewebion.ir/ek/radiopayam/live/576p/index.m3u8',      icon: '🛍️' },
+          { name: 'Radio Salamat',   url: 'https://live-azd1103.telewebion.ir/ek/radiosalamat/live/576p/index.m3u8',    icon: '🛍️' },
+          { name: 'Radio Tartil',    url: 'https://live-azd1107.telewebion.ir/ek/radiotartil/live/576p/index.m3u8',     icon: '🛍️' },
+          { name: 'Radio Iran',      url: 'https://live-azd1113.telewebion.ir/ek/radioiran/live/576p/index.m3u8',       icon: '🛍️' },
+        ]
+      }
+    ]
+  };
 
   const ifilmRaw = [
     { name: 'iFilm Farsi',   url: 'https://live.presstv.ir/hls/ifilmfa.m3u8',  color: 'blue' },
@@ -176,28 +208,42 @@
     { name: 'iFilm Arabic',  url: 'https://live.presstv.ir/hls/ifilmar.m3u8',  color: 'blue' }
   ];
 
-  // ----- Ordningslagring -----
-  function loadOrder(cat) { try { const o = localStorage.getItem(`order_${cat}`); return o ? JSON.parse(o) : null; } catch(e){ return null; } }
-  function saveOrder(cat, arr) { localStorage.setItem(`order_${cat}`, JSON.stringify(arr.map(c=>c.url))); }
-  function applyStoredOrder(arr, catKey) {
-    const stored = loadOrder(catKey);
-    if(!stored || !stored.length) return arr;
-    const map = new Map(arr.map(c=>[c.url, c]));
-    const ordered = [];
-    for(let url of stored) if(map.has(url)) ordered.push(map.get(url));
-    for(let c of arr) if(!ordered.includes(c)) ordered.push(c);
-    return ordered;
-  }
-  function reorderCategory(catKey, newArr) {
-    if(catKey === 'telewebion') channels.telewebion = newArr;
-    else if(catKey === 'ifilm') channels.ifilm = newArr;
-    saveOrder(catKey, newArr);
+  // Build flat telewebion list for ordering/storage (all channels in order)
+  function buildTelewebionFlat() {
+    const flat = [];
+    for (const sg of subgroups.telewebion) {
+      for (const ch of sg.channels) flat.push({...ch, subgroup: sg.key});
+    }
+    return flat;
   }
 
+  // ----- Order storage -----
+  function loadOrder(cat) { try { const o = localStorage.getItem(`order_${cat}`); return o ? JSON.parse(o) : null; } catch(e){ return null; } }
+  function saveOrder(cat, arr) { localStorage.setItem(`order_${cat}`, JSON.stringify(arr.map(c=>c.url))); }
+
+  function applyStoredOrderFlat(flat, catKey) {
+    const stored = loadOrder(catKey);
+    if(!stored || !stored.length) return flat;
+    const map = new Map(flat.map(c=>[c.url, c]));
+    const ordered = [];
+    for(let url of stored) if(map.has(url)) ordered.push(map.get(url));
+    for(let c of flat) if(!ordered.includes(c)) ordered.push(c);
+    return ordered;
+  }
+
+  // Channels: flat arrays for ordering
+  const telewebionFlat = applyStoredOrderFlat(buildTelewebionFlat(), 'telewebion');
+  const ifilmOrdered   = applyStoredOrderFlat([...ifilmRaw], 'ifilm');
+
   const channels = {
-    telewebion: applyStoredOrder([...telewebionRaw], 'telewebion'),
-    ifilm:      applyStoredOrder([...ifilmRaw],      'ifilm'),
+    telewebion: telewebionFlat,
+    ifilm: ifilmOrdered
   };
+
+  function reorderCategory(catKey, newArr) {
+    channels[catKey] = newArr;
+    saveOrder(catKey, newArr);
+  }
 
   let hlsInst = null;
   let dashInst = null;
@@ -271,6 +317,7 @@
 
   try { favs = JSON.parse(localStorage.getItem('xomfavs') || '[]'); } catch(e) { favs = []; }
   let curFilter = null;
+  let curSubgroup = null;
   let dragSource = null;
 
   function esc(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
@@ -281,10 +328,18 @@
     if (dashInst) { dashInst.reset(); dashInst = null; }
   }
 
-  function render(filter) {
+  // Build subgroup label map for telewebion channels
+  function getSubgroupLabel(subgroupKey) {
+    const sg = subgroups.telewebion.find(s => s.key === subgroupKey);
+    return sg ? sg.label : '';
+  }
+
+  function render(filter, sgFilter) {
     curFilter = filter;
+    curSubgroup = sgFilter;
     const catNames = { telewebion:'📡 Telewebion', ifilm:'🎬 iFilm' };
-    const row = (ch, idx, catKey) => {
+
+    const chRow = (ch, idx, catKey) => {
       const star = favs.some(f=>f.url===ch.url) ? '⭐' : '☆';
       const activeClass = (cur && cur.url===ch.url) ? 'active' : '';
       const colorClass = ch.color || '';
@@ -293,16 +348,43 @@
         <button class="fav-btn" onclick="event.stopPropagation();fav('${esc(ch.url)}','${esc(ch.name)}')">${star}</button>
       </div>`;
     };
+
     let html = '';
-    if (filter && channels[filter]) {
-      html = `<div class="category-title">${catNames[filter]} (${channels[filter].length})</div>` +
-             channels[filter].map((ch,i) => row(ch,i,filter)).join('');
-    } else {
-      Object.keys(channels).forEach(cat => {
-        html += `<div class="category-title">${catNames[cat]} (${channels[cat].length})</div>` +
-                channels[cat].map((ch,i) => row(ch,i,cat)).join('');
+
+    if (filter === 'telewebion' || (!filter)) {
+      const catArr = channels.telewebion;
+      // Group by subgroup, preserving drag order
+      const sgMap = new Map();
+      for (const sg of subgroups.telewebion) sgMap.set(sg.key, { label: sg.label, items: [] });
+      catArr.forEach((ch, idx) => {
+        const sgKey = ch.subgroup || 'sarasari';
+        if (sgMap.has(sgKey)) sgMap.get(sgKey).items.push({ch, idx});
       });
+
+      // If filtering by subgroup, only show that one group (no category header)
+      if (sgFilter) {
+        const sg = sgMap.get(sgFilter);
+        if (sg && sg.items.length > 0) {
+          html += `<div class="category-title">${sg.label} (${sg.items.length})</div>`;
+          html += sg.items.map(({ch, idx}) => chRow(ch, idx, 'telewebion')).join('');
+        }
+      } else {
+        if (!filter) html += `<div class="category-title">${catNames.telewebion} (${catArr.length})</div>`;
+        else html += `<div class="category-title">${catNames.telewebion} (${catArr.length})</div>`;
+        for (const [sgKey, sg] of sgMap) {
+          if (sg.items.length === 0) continue;
+          html += `<div class="subgroup-title">${sg.label}</div>`;
+          html += sg.items.map(({ch, idx}) => chRow(ch, idx, 'telewebion')).join('');
+        }
+      }
     }
+
+    if ((filter === 'ifilm' || (!filter)) && !sgFilter) {
+      const catArr = channels.ifilm;
+      html += `<div class="category-title">${catNames.ifilm} (${catArr.length})</div>`;
+      html += catArr.map((ch, i) => chRow(ch, i, 'ifilm')).join('');
+    }
+
     document.getElementById('ch-container').innerHTML = html;
     attachDragListeners();
     attachChannelEvents();
@@ -363,7 +445,7 @@
     const [moved] = arr.splice(srcIdx, 1);
     arr.splice(tgtIdx, 0, moved);
     reorderCategory(srcCat, arr);
-    render(curFilter);
+    render(curFilter, curSubgroup);
     cleanupDrag();
   }
   function cleanupDrag() {
@@ -386,7 +468,7 @@
       vid.play().catch(() => {
         wrap.innerHTML = `<div class="error-msg"><h3>⚠️ JS AV: Kunde inte spela</h3><p>${url.substring(0,70)}</p><button class="btn" onclick="reload()">↻ Försök igen</button></div>`;
       });
-      render(curFilter);
+      render(curFilter, curSubgroup);
       return;
     }
 
@@ -423,7 +505,7 @@
       } else {
         showErr();
       }
-      render(curFilter);
+      render(curFilter, curSubgroup);
     }, 50);
   }
 
@@ -458,19 +540,26 @@
   function showAll(btn) {
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    render(null);
+    curFilter = null; curSubgroup = null;
+    render(null, null);
   }
   function filterCat(btn, cat) {
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    render(cat);
+    curSubgroup = null;
+    render(cat, null);
+  }
+  function filterSubgroup(btn, sgKey) {
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    render('telewebion', sgKey);
   }
   function toggleList() { document.getElementById('channel-list').classList.toggle('show'); }
   function fav(url, name) {
     const i = favs.findIndex(f=>f.url===url);
     i > -1 ? favs.splice(i,1) : favs.push({url,name});
     localStorage.setItem('xomfavs', JSON.stringify(favs));
-    render(curFilter);
+    render(curFilter, curSubgroup);
   }
 
   (function loadPrefs() {
@@ -491,7 +580,7 @@
     }
   })();
 
-  render(null);
+  render(null, null);
 </script>
 </body>
 </html>
