@@ -2,216 +2,408 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Telewebion · iFilm | Upplösning + JS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📺 Telewebion Kanaler</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); color: #fff; min-height: 100vh; }
-    .header { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(78,204,163,0.3); }
-    .header h1 { font-size: 2.3em; color: #4ecca3; letter-spacing: -0.5px; }
-    .nav-buttons { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px; background: rgba(0,0,0,0.2); }
-    .nav-btn { background: #1e2f3f; color: #e0e0e0; border: none; padding: 8px 20px; border-radius: 40px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
-    .nav-btn:hover, .nav-btn.active { background: #4ecca3; color: #0a1c2a; transform: scale(1.02); }
-    .container { display: flex; height: calc(100vh - 220px); padding: 0 20px 20px; gap: 20px; }
-    .channel-list { width: 340px; background: rgba(0,0,0,0.45); backdrop-filter: blur(6px); overflow-y: auto; border-radius: 24px; padding: 14px; }
-    .video-container { flex: 1; background: #03090e; border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; }
-    .video-header { background: rgba(0,0,0,0.7); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-    .video-title { font-size: 1.25rem; color: #4ecca3; }
-    .video-controls button { padding: 7px 14px; margin-left: 6px; background: #1f3e48; color: white; border: none; border-radius: 30px; cursor: pointer; font-size: 0.85rem; }
-    .video-controls button:hover { background: #4ecca3; color: #000; }
-    .video-wrapper { flex: 1; background: #000; position: relative; }
-    video { width: 100%; height: 100%; object-fit: contain; }
-    .channel-item { padding: 10px 12px; margin: 6px 0; border-radius: 16px; background: rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-    .channel-item:hover { background: rgba(78,204,163,0.3); }
-    .res-select { background: #1e2f3f; color: white; border: 1px solid #4ecca3; padding: 5px 10px; border-radius: 8px; font-size: 0.85rem; }
-    .js-btn { background: #c95a2e; color: white; }
-    .js-btn.on { background: #4ecca3; color: #000; }
-    .spinner { width: 30px; height: 30px; border: 4px solid rgba(78,204,163,0.3); border-top-color: #4ecca3; border-radius: 50%; animation: spin 1s linear infinite; margin: 40px auto; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .error-msg { text-align: center; padding: 40px; color: #ffbb99; }
+    body { 
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      background: linear-gradient(135deg, #0a1f3b, #1a3b5c); 
+      color: #fff; 
+      min-height: 100vh;
+    }
+    .header { 
+      background: rgba(0,0,0,0.4); 
+      padding: 25px 20px; 
+      text-align: center; 
+      border-bottom: 3px solid #4ecca3;
+    }
+    .header h1 { 
+      font-size: 2.8em; 
+      color: #4ecca3; 
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    .header p { 
+      font-size: 1.2em; 
+      opacity: 0.9;
+    }
+    .stats {
+      margin-top: 10px;
+      font-size: 1.1em;
+      color: #ffd700;
+    }
+    .container { 
+      display: flex; 
+      height: calc(100vh - 170px); 
+      padding: 20px; 
+      gap: 20px; 
+    }
+    .channel-list { 
+      width: 320px; 
+      background: rgba(0,0,0,0.5); 
+      backdrop-filter: blur(5px);
+      overflow-y: auto; 
+      border-radius: 15px; 
+      padding: 15px; 
+      border: 1px solid rgba(78,204,163,0.3);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .channel-list h3 {
+      color: #4ecca3;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #4ecca3;
+      font-size: 1.4em;
+    }
+    .video-container { 
+      flex: 1; 
+      background: #000; 
+      border-radius: 15px; 
+      overflow: hidden; 
+      display: flex; 
+      flex-direction: column;
+      border: 1px solid #4ecca3;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+    }
+    .video-header { 
+      background: rgba(0,0,0,0.9); 
+      padding: 18px 20px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      border-bottom: 1px solid #4ecca3;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .video-title { 
+      font-size: 1.5em; 
+      color: #4ecca3;
+      font-weight: bold;
+    }
+    .video-controls { 
+      display: flex; 
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn { 
+      background: #4ecca3; 
+      color: #0a1f3b; 
+      border: none; 
+      padding: 8px 18px; 
+      border-radius: 25px; 
+      cursor: pointer; 
+      font-weight: bold;
+      font-size: 0.95em;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .btn:hover { 
+      background: #3bb083; 
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(78,204,163,0.4);
+    }
+    .btn.outline {
+      background: transparent;
+      border: 1px solid #4ecca3;
+      color: #4ecca3;
+    }
+    .btn.outline:hover {
+      background: rgba(78,204,163,0.2);
+    }
+    .btn.js-off {
+      background: #c95a2e !important;
+      color: #fff !important;
+      border-color: #ff884d !important;
+      box-shadow: 0 0 8px #ff884d;
+    }
+    .video-wrapper { 
+      flex: 1; 
+      position: relative; 
+      background: #000; 
+    }
+    video, iframe { 
+      width: 100%; 
+      height: 100%; 
+      border: none;
+      object-fit: contain;
+    }
+    .error-msg { 
+      text-align: center; 
+      padding: 50px;
+      color: #999;
+    }
+    .error-msg h3 {
+      font-size: 2em;
+      margin-bottom: 20px;
+      color: #4ecca3;
+    }
+    .channel-item { 
+      padding: 14px 15px; 
+      margin: 8px 0; 
+      cursor: pointer; 
+      border-radius: 12px; 
+      background: rgba(255,255,255,0.08); 
+      transition: all 0.2s;
+      border-left: 4px solid transparent;
+      font-size: 1.05em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .channel-item:hover { 
+      background: rgba(78,204,163,0.25); 
+      transform: translateX(5px);
+      border-left-color: #4ecca3;
+    }
+    .channel-item.active { 
+      background: rgba(78,204,163,0.4); 
+      border-left-color: #ffd700;
+      font-weight: bold;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .channel-icon { font-size: 1.3em; }
+    .channel-count {
+      display: inline-block;
+      background: #4ecca3;
+      color: #0a1f3b;
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 0.8em;
+      margin-left: 10px;
+      font-weight: bold;
+    }
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #4ecca3; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3bb083; }
+    @media (max-width: 768px) {
+      .container { flex-direction: column; height: auto; }
+      .channel-list { width: 100%; max-height: 300px; }
+      .header h1 { font-size: 2em; }
+    }
   </style>
 </head>
 <body>
-<div class="header">
-  <h1>📡 Telewebion · iFilm</h1>
-  <p>Välj kanal + upplösning • JS PÅ/AV</p>
-</div>
+  <div class="header">
+    <h1>📡 TELEWEBION KANALER</h1>
+    <p>Alla tillgängliga kanaler från telewebion.ir</p>
+    <div class="stats" id="channel-count">Laddar kanaler...</div>
+  </div>
 
-<div class="nav-buttons">
-  <button class="nav-btn active" onclick="showAll(this)">Alla</button>
-  <button class="nav-btn" onclick="filterSubgroup(this,'sarasari')">🌐 Sarasari</button>
-  <button class="nav-btn" onclick="filterSubgroup(this,'ostani')">🏙️ Ostani</button>
-  <button class="nav-btn" onclick="filterSubgroup(this,'ekhtesasi')">🎯 Ekhtesasi</button>
-  <button class="nav-btn" onclick="filterSubgroup(this,'radio')">📻 Radio</button>
-  <button class="nav-btn" onclick="filterCat(this,'ifilm')">🎬 iFilm</button>
-</div>
-
-<div class="container">
-  <aside class="channel-list" id="channel-list">
-    <div id="ch-container"></div>
-  </aside>
-  <main class="video-container">
-    <div class="video-header">
-      <div class="video-title" id="ch-title">Välj kanal och upplösning</div>
-      <div class="video-controls">
-        <button onclick="reload()">↻ Ladda om</button>
-        <button id="jsBtn" class="js-btn on" onclick="toggleJS()">⚙️ JS PÅ</button>
+  <div class="container">
+    <aside class="channel-list">
+      <h3>📺 Kanaler <span class="channel-count" id="count-badge">0</span></h3>
+      <div id="channel-container"></div>
+    </aside>
+    
+    <main class="video-container">
+      <div class="video-header">
+        <div class="video-title" id="current-channel">Välj en kanal</div>
+        <div class="video-controls">
+          <button class="btn outline" onclick="toggleFullscreen()">⛶ Fullskärm</button>
+          <button class="btn outline" onclick="reloadChannel()">↻ Ladda om</button>
+          <button class="btn" id="jsToggleBtn" onclick="toggleJS()">⚙️ JS PÅ</button>
+        </div>
       </div>
-    </div>
-    <div class="video-wrapper" id="vwrap">
-      <div class="error-msg"><h3>👈 Välj en kanal från listan</h3></div>
-    </div>
-  </main>
-</div>
+      <div class="video-wrapper" id="video-wrapper">
+        <div class="error-msg">
+          <h3>👈 Välj en kanal från listan</h3>
+          <p>Klicka på valfri kanal för att starta streaming</p>
+        </div>
+      </div>
+    </main>
+  </div>
 
-<script>
-// ==================== KANALDATA ====================
-const baseDomain = "https://live-azd1102.telewebion.ir/ek/";
+  <script>
+    // Alla kanaler med direkta m3u8-URLer
+    const telewebionChannels = [
+      { name: 'TV1',          url: 'https://cdnw.telewebion.com/tv1/live/playlist.m3u8',                icon: '📡' },
+      { name: 'TV2',          url: 'https://cdnw.telewebion.com/tv2/live/playlist.m3u8',                icon: '📡' },
+      { name: 'TV3',          url: 'https://cdnw.telewebion.com/tv3/live/playlist.m3u8',                icon: '📡' },
+      { name: 'TV4',          url: 'https://cdnw.telewebion.com/tv4/live/playlist.m3u8',                icon: '📡' },
+      { name: 'TAMASHA',      url: 'https://cdnw.telewebion.com/hdtest/live/playlist.m3u8',             icon: '🎭' },
+      { name: 'POOYA',        url: 'https://cdnw.telewebion.com/pooya/live/playlist.m3u8',              icon: '🧸' },
+      { name: 'IFILM',        url: 'https://cdnw.telewebion.com/ifilm/live/playlist.m3u8',              icon: '🎬' },
+      { name: 'NAMAYESH',     url: 'https://cdnw.telewebion.com/namayesh/live/playlist.m3u8',           icon: '🎪' },
+      { name: 'TEHRAN',       url: 'https://cdnw.telewebion.com/tehran/live/playlist.m3u8',             icon: '🏙️' },
+      { name: 'MOSTANAD',     url: 'https://cdnw.telewebion.com/mostanad/live/playlist.m3u8',           icon: '📽️' },
+      { name: 'QURAN',        url: 'https://cdnw.telewebion.com/quran/live/playlist.m3u8',              icon: '📖' },
+      { name: 'AMOUZESH',     url: 'https://cdnw.telewebion.com/amouzesh/live/playlist.m3u8',           icon: '📚' },
+      { name: 'SALAMAT',      url: 'https://cdnw.telewebion.com/salamat/live/playlist.m3u8',            icon: '💚' },
+      { name: 'OFOGH',        url: 'https://cdnw.telewebion.com/ofogh/live/playlist.m3u8',              icon: '🌟' },
+      { name: 'OMID',         url: 'https://cdnw.telewebion.com/omid/live/playlist.m3u8',               icon: '⭐' },
+      { name: 'SEPEHR',       url: 'https://cdnw.telewebion.com/sepehr/live/playlist.m3u8',             icon: '🕌' },
+      { name: 'IRINN',        url: 'https://cdnw.telewebion.com/irinn/live/playlist.m3u8',              icon: '📰' },
+      { name: 'Javaneh',      url: 'https://cdnw.telewebion.com/javaneh/live/playlist.m3u8',            icon: '🧑' },
+      { name: 'Nava',         url: 'https://cdnw.telewebion.com/nava/live/playlist.m3u8',               icon: '🎵' },
+      { name: 'Nama',         url: 'https://cdnw.telewebion.com/nama/live/playlist.m3u8',               icon: '🎼' },
+      { name: 'URMIA (AGH)',  url: 'https://cdnw.telewebion.com/azarbayjangharbi/live/playlist.m3u8',   icon: '🌍' },
+      { name: 'SAHAND',       url: 'https://cdnw.telewebion.com/sahand/live/playlist.m3u8',             icon: '⛰️' },
+      { name: 'ALBORZ',       url: 'https://cdnw.telewebion.com/alborz/live/playlist.m3u8',             icon: '🏔️' },
+      { name: 'ESFAHAN',      url: 'https://cdnw.telewebion.com/esfahan/live/playlist.m3u8',            icon: '🕌' },
+      { name: 'SABALAN',      url: 'https://cdnw.telewebion.com/sabalan/live/playlist.m3u8',            icon: '🗻' },
+      { name: 'ILAM',         url: 'https://cdnw.telewebion.com/ilam/live/playlist.m3u8',               icon: '🏞️' },
+      { name: 'BUSHEHR',      url: 'https://cdnw.telewebion.com/bushehr/live/playlist.m3u8',            icon: '🌊' },
+      { name: 'JAHANBIN',     url: 'https://cdnw.telewebion.com/jahanbin/live/playlist.m3u8',           icon: '🔭' },
+      { name: 'ABADAN',       url: 'https://cdnw.telewebion.com/abadan/live/playlist.m3u8',             icon: '🏭' },
+      { name: 'KH.RAZAVI',    url: 'https://cdnw.telewebion.com/khorasanrazavi/live/playlist.m3u8',     icon: '🕌' },
+      { name: 'ATRAK',        url: 'https://cdnw.telewebion.com/atrak/live/playlist.m3u8',              icon: '🌊' },
+      { name: 'KHALIJFARS',   url: 'https://cdnw.telewebion.com/khalijefars/live/playlist.m3u8',        icon: '🌊' },
+      { name: 'KHOZESTAN',    url: 'https://cdnw.telewebion.com/khoozestan/live/playlist.m3u8',         icon: '🏜️' },
+      { name: 'ESHRAGH',      url: 'https://cdnw.telewebion.com/eshragh/live/playlist.m3u8',            icon: '✨' },
+      { name: 'SEMNAN',       url: 'https://cdnw.telewebion.com/semnan/live/playlist.m3u8',             icon: '🏜️' },
+      { name: 'HAMON',        url: 'https://cdnw.telewebion.com/hamoon/live/playlist.m3u8',             icon: '🏞️' },
+      { name: 'FARS',         url: 'https://cdnw.telewebion.com/fars/live/playlist.m3u8',               icon: '🏛️' },
+      { name: 'GHAZVIN',      url: 'https://cdnw.telewebion.com/qazvin/live/playlist.m3u8',             icon: '🏛️' },
+      { name: 'NOOR',         url: 'https://cdnw.telewebion.com/noor/live/playlist.m3u8',               icon: '💡' },
+      { name: 'LORESTAN',     url: 'https://cdnw.telewebion.com/aflak/live/playlist.m3u8',              icon: '🏞️' },
+      { name: 'KERMAN',       url: 'https://cdnw.telewebion.com/kerman/live/playlist.m3u8',             icon: '🏜️' },
+      { name: 'ZAGROS',       url: 'https://cdnw.telewebion.com/zagros/live/playlist.m3u8',             icon: '⛰️' },
+      { name: 'DENA',         url: 'https://cdnw.telewebion.com/dena/live/playlist.m3u8',               icon: '⛰️' },
+      { name: 'KISH',         url: 'https://cdnw.telewebion.com/kish/live/playlist.m3u8',               icon: '🏝️' },
+      { name: 'GOLESTAN',     url: 'https://cdnw.telewebion.com/sabz/live/playlist.m3u8',               icon: '🌳' },
+      { name: 'BARAN',        url: 'https://cdnw.telewebion.com/baran/live/playlist.m3u8',              icon: '☔' },
+      { name: 'KORDESTAN',    url: 'https://cdnw.telewebion.com/kordestan/live/playlist.m3u8',          icon: '🏔️' },
+      { name: 'YAZD',         url: 'https://cdnw.telewebion.com/taban/live/playlist.m3u8',              icon: '🏜️' },
+      { name: 'TABARESTAN',   url: 'https://cdnw.telewebion.com/tabarestan/live/playlist.m3u8',         icon: '🌳' },
+      { name: 'AFTAB',        url: 'https://cdnw.telewebion.com/aftab/live/playlist.m3u8',              icon: '☀️' },
+      { name: 'MAHABAD',      url: 'https://cdnw.telewebion.com/mahabad/live/playlist.m3u8',            icon: '🏞️' },
+      { name: 'HAMADAN',      url: 'https://cdnw.telewebion.com/sina/live/playlist.m3u8',               icon: '🏛️' },
+      { name: 'KHAVARAN',     url: 'https://cdnw.telewebion.com/khavaran/live/playlist.m3u8',           icon: '🌅' },
+      { name: 'HABIB',        url: 'https://cdnw.telewebion.com/habib/live/playlist.m3u8',              icon: '🤝' },
+      { name: 'JAM JAM 1',    url: 'https://cdnw.telewebion.com/jjtv1/live/playlist.m3u8',              icon: '🌐' },
+      { name: 'JAM JAM 2',    url: 'https://cdnw.telewebion.com/jjtv2/live/playlist.m3u8',              icon: '🌐' },
+      { name: 'JAM JAM 3',    url: 'https://cdnw.telewebion.com/jjtv3/live/playlist.m3u8',              icon: '🌐' },
+      { name: 'iFilm Arabic', url: 'https://cdnw.telewebion.com/ifilmar/live/playlist.m3u8',            icon: '🎬' },
+      { name: 'KAWTHAR',      url: 'https://cdnw.telewebion.com/kawthar/live/playlist.m3u8',            icon: '📖' },
+      { name: 'ARA',          url: 'https://cdnw.telewebion.com/ara/live/playlist.m3u8',                icon: '🎨' },
+      { name: 'AYAM',         url: 'https://cdnw.telewebion.com/ayam/live/playlist.m3u8',               icon: '📅' },
+      { name: 'GARDESH',      url: 'https://cdnw.telewebion.com/gardesh/live/playlist.m3u8',            icon: '🌿' },
+      { name: 'LABBAYK',      url: 'https://cdnw.telewebion.com/labbayk/live/playlist.m3u8',            icon: '🕌' },
+      { name: 'JAM',          url: 'https://cdnw.telewebion.com/jam/live/playlist.m3u8',                icon: '🎵' },
+      { name: 'SHOMA',        url: 'https://cdnw.telewebion.com/shoma/live/playlist.m3u8',              icon: '👥' },
+      { name: 'IRANKALA',     url: 'https://cdnw.telewebion.com/irankala/live/playlist.m3u8',           icon: '🛍️' },
+    ];
 
-const telewebionChannels = [
-  {name: "TV1", base: "tv1", icon: "📡", subgroup: "sarasari"},
-  {name: "TV2", base: "tv2", icon: "📡", subgroup: "sarasari"},
-  {name: "TV3", base: "tv3", icon: "📡", subgroup: "sarasari"},
-  {name: "TV4", base: "tv4", icon: "📡", subgroup: "sarasari"},
-  {name: "TAMASHA", base: "hdtest", icon: "🎭", subgroup: "sarasari"},
-  {name: "POOYA", base: "pooya", icon: "🧸", subgroup: "sarasari"},
-  {name: "IFILM", base: "ifilm", icon: "🎬", subgroup: "sarasari"},
-  {name: "NAMAYESH", base: "namayesh", icon: "🎪", subgroup: "sarasari"},
-  {name: "TEHRAN", base: "tehran", icon: "🏙️", subgroup: "sarasari"},
-  {name: "MOSTANAD", base: "mostanad", icon: "📽️", subgroup: "sarasari"},
-  {name: "QURAN", base: "quran", icon: "📖", subgroup: "sarasari"},
-  {name: "AMOUZESH", base: "amouzesh", icon: "📚", subgroup: "sarasari"},
-  {name: "SALAMAT", base: "salamat", icon: "💚", subgroup: "sarasari"},
-  {name: "OFOGH", base: "ofogh", icon: "🌟", subgroup: "sarasari"},
-  {name: "OMID", base: "omid", icon: "⭐", subgroup: "sarasari"},
-  {name: "SEPEHR", base: "sepehr", icon: "🕌", subgroup: "sarasari"},
-  {name: "IRINN", base: "irinn", icon: "📰", subgroup: "sarasari"},
-  {name: "ESFAHAN", base: "esfahan", icon: "🕌", subgroup: "ostani"},
-  {name: "FARS", base: "fars", icon: "🏛️", subgroup: "ostani"},
-  {name: "KHOZESTAN", base: "khoozestan", icon: "🏜️", subgroup: "ostani"},
-  {name: "HABIB", base: "habib", icon: "🤝", subgroup: "ekhtesasi"},
-  {name: "VELAYAT", base: "velayat", icon: "📖", subgroup: "ekhtesasi"},
-];
+    telewebionChannels.sort((a, b) => a.name.localeCompare(b.name));
 
-const ifilmChannels = [
-  {name: "iFilm Farsi", url: "https://live.presstv.ir/hls/ifilmfa.m3u8"},
-  {name: "iFilm English", url: "https://live.presstv.ir/hls/ifilmen.m3u8"},
-  {name: "iFilm Arabic", url: "https://live.presstv.ir/hls/ifilmar.m3u8"},
-];
+    let currentChannel = null;
+    let hlsInst = null;
+    let jsEnabled = true;
 
-const resolutions = ["1080p", "720p", "576p"];
+    // Återställ JS-knapp-state från localStorage
+    try {
+      const saved = localStorage.getItem('twjs');
+      if (saved === 'off') jsEnabled = false;
+    } catch(e) {}
 
-let cur = null;
-let hlsInst = null;
-let jsEnabled = true;   // JS är på som standard
+    document.getElementById('channel-count').textContent = `Totalt ${telewebionChannels.length} kanaler`;
+    document.getElementById('count-badge').textContent = telewebionChannels.length;
 
-// ==================== HJÄLPFUNKTIONER ====================
-function getUrl(base, res) {
-  return `${baseDomain}${base}/live/${res}/index.m3u8`;
-}
+    function updateJsBtn() {
+      const btn = document.getElementById('jsToggleBtn');
+      if (jsEnabled) {
+        btn.textContent = '⚙️ JS PÅ';
+        btn.classList.remove('js-off');
+      } else {
+        btn.textContent = '⚠️ JS AV';
+        btn.classList.add('js-off');
+      }
+    }
 
-function render(filter, sgFilter) {
-  let html = '';
+    function toggleJS() {
+      jsEnabled = !jsEnabled;
+      try { localStorage.setItem('twjs', jsEnabled ? 'on' : 'off'); } catch(e) {}
+      updateJsBtn();
+      if (currentChannel) playChannel(currentChannel.url, currentChannel.name, currentChannel.icon);
+    }
 
-  if (filter === 'telewebion' || !filter) {
-    let list = telewebionChannels;
-    if (sgFilter) list = telewebionChannels.filter(ch => ch.subgroup === sgFilter);
+    function destroyHls() {
+      if (hlsInst) { hlsInst.destroy(); hlsInst = null; }
+    }
 
-    html += `<div style="color:#4ecca3; font-weight:bold; padding:8px 4px;">Telewebion ${sgFilter ? sgFilter : ''}</div>`;
-    list.forEach(ch => {
-      html += `
-        <div class="channel-item">
-          <span>${ch.icon} ${ch.name}</span>
-          <select class="res-select" onchange="playChannel('${ch.base}', '${ch.name}', this.value)">
-            ${resolutions.map(r => `<option value="${r}">${r}</option>`).join('')}
-          </select>
+    function renderChannels() {
+      const container = document.getElementById('channel-container');
+      let html = '';
+      telewebionChannels.forEach(ch => {
+        const isActive = currentChannel && currentChannel.url === ch.url ? 'active' : '';
+        const safeUrl  = ch.url.replace(/'/g, "\\'");
+        const safeName = ch.name.replace(/'/g, "\\'");
+        html += `<div class="channel-item ${isActive}" onclick="playChannel('${safeUrl}','${safeName}','${ch.icon}')">
+          <span class="channel-icon">${ch.icon}</span>
+          <span>${ch.name}</span>
         </div>`;
-    });
-  }
+      });
+      container.innerHTML = html;
+    }
 
-  if ((filter === 'ifilm' || !filter) && !sgFilter) {
-    html += `<div style="color:#4ecca3; font-weight:bold; padding:8px 4px;">🎬 iFilm</div>`;
-    ifilmChannels.forEach(ch => {
-      html += `<div class="channel-item" onclick="playFixed('${ch.url}', '${ch.name}')">${ch.name}</div>`;
-    });
-  }
+    function playChannel(url, name, icon) {
+      currentChannel = { url, name, icon };
+      document.getElementById('current-channel').innerHTML = `${icon} ${name}`;
+      destroyHls();
 
-  document.getElementById('ch-container').innerHTML = html;
-}
+      const wrapper = document.getElementById('video-wrapper');
 
-function playChannel(base, name, res) {
-  const url = getUrl(base, res);
-  cur = {url, name, base, res, type: 'telewebion'};
-  document.getElementById('ch-title').textContent = `${name} — ${res}`;
+      // JS AV — enkel video-tagg, webbläsarens inbyggda HLS (fungerar på Safari/TV)
+      if (!jsEnabled) {
+        wrapper.innerHTML = '<video id="vplayer" controls autoplay style="width:100%;height:100%;background:#000;"></video>';
+        const vid = document.getElementById('vplayer');
+        vid.src = url;
+        vid.play().catch(() => {
+          wrapper.innerHTML = `<div class="error-msg"><h3>⚠️ Kunde inte spela</h3><p>Aktivera JS PÅ och försök igen.</p><button class="btn" onclick="toggleJS()">⚙️ Aktivera JS</button></div>`;
+        });
+        renderChannels();
+        return;
+      }
 
-  loadVideo(url);
-}
+      // JS PÅ — använd HLS.js för bästa kompatibilitet
+      wrapper.innerHTML = '<video id="vplayer" controls autoplay style="width:100%;height:100%;background:#000;"></video>';
+      const vid = document.getElementById('vplayer');
 
-function playFixed(url, name) {
-  cur = {url, name, type: 'ifilm'};
-  document.getElementById('ch-title').textContent = name;
-  loadVideo(url);
-}
+      if (Hls.isSupported()) {
+        hlsInst = new Hls({
+          enableWorker: true,
+          startPosition: -1,
+          liveSyncDurationCount: 3,
+          maxBufferLength: 30,
+          maxMaxBufferLength: 90,
+          fragLoadingMaxRetry: 6,
+          manifestLoadingMaxRetry: 5,
+        });
+        hlsInst.loadSource(url);
+        hlsInst.attachMedia(vid);
+        hlsInst.on(Hls.Events.MANIFEST_PARSED, () => vid.play().catch(() => {}));
+        hlsInst.on(Hls.Events.ERROR, (_, d) => {
+          if (!d.fatal) return;
+          if (d.type === Hls.ErrorTypes.NETWORK_ERROR) setTimeout(() => { if (hlsInst) hlsInst.startLoad(); }, 2000);
+          else if (d.type === Hls.ErrorTypes.MEDIA_ERROR) hlsInst.recoverMediaError();
+          else wrapper.innerHTML = `<div class="error-msg"><h3>⚠️ Stream-fel</h3><p>Prova att trycka ↻ Ladda om eller byt JS-läge.</p></div>`;
+        });
+      } else if (vid.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari / Apple TV inbyggt HLS-stöd
+        vid.src = url;
+        vid.play().catch(() => {});
+      } else {
+        wrapper.innerHTML = `<div class="error-msg"><h3>⚠️ HLS stöds inte</h3><p>Din webbläsare stöder inte HLS-streams.</p></div>`;
+      }
 
-function loadVideo(url) {
-  const wrap = document.getElementById('vwrap');
-  wrap.innerHTML = `<div style="display:flex;justify-content:center;align-items:center;height:100%;"><div class="spinner"></div><br>Laddar...</div>`;
+      renderChannels();
+    }
 
-  if (hlsInst) { hlsInst.destroy(); hlsInst = null; }
+    function reloadChannel() {
+      if (currentChannel) playChannel(currentChannel.url, currentChannel.name, currentChannel.icon);
+    }
 
-  wrap.innerHTML = '<video id="vplayer" controls autoplay style="width:100%;height:100%;"></video>';
-  const vid = document.getElementById('vplayer');
+    function toggleFullscreen() {
+      const wrapper = document.getElementById('video-wrapper');
+      if (!document.fullscreenElement) wrapper.requestFullscreen();
+      else document.exitFullscreen();
+    }
 
-  if (!jsEnabled) {
-    // Native mode (JS AV)
-    vid.src = url;
-    vid.play().catch(() => {});
-    return;
-  }
-
-  // JS mode (hls.js)
-  if (Hls.isSupported()) {
-    hlsInst = new Hls({
-      maxBufferLength: 20,
-      liveSyncDurationCount: 3,
-      startLevel: -1
-    });
-    hlsInst.loadSource(url);
-    hlsInst.attachMedia(vid);
-    hlsInst.on(Hls.Events.MANIFEST_PARSED, () => vid.play().catch(() => {}));
-  } else {
-    vid.src = url;
-    vid.play().catch(() => {});
-  }
-}
-
-function reload() {
-  if (!cur) return;
-  if (cur.type === 'telewebion') playChannel(cur.base, cur.name, cur.res);
-  else playFixed(cur.url, cur.name);
-}
-
-function toggleJS() {
-  jsEnabled = !jsEnabled;
-  const btn = document.getElementById('jsBtn');
-  if (jsEnabled) {
-    btn.textContent = "⚙️ JS PÅ";
-    btn.classList.add('on');
-  } else {
-    btn.textContent = "⚠️ JS AV";
-    btn.classList.remove('on');
-  }
-  if (cur) reload();   // starta om aktuell kanal med ny inställning
-}
-
-// Navigationsfunktioner
-function showAll(btn) { document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(null, null); }
-function filterSubgroup(btn, sg) { document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render('telewebion', sg); }
-function filterCat(btn, cat) { document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(cat, null); }
-
-// Start
-render(null, null);
-</script>
+    updateJsBtn();
+    renderChannels();
+  </script>
 </body>
 </html>
