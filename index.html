@@ -3,39 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Telewebion · iFilm | Upplösning</title>
+  <title>Telewebion · iFilm | Dra & sortera</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); color: #fff; min-height: 100vh; }
     .header { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(78,204,163,0.3); }
-    .header h1 { font-size: 2.3em; color: #4ecca3; letter-spacing: -0.5px; }
+    .header h1 { font-size: 2.3em; color: #4ecca3; letter-spacing: -0.5px; margin-bottom: 6px; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+    .header p { opacity: 0.8; font-size: 0.95rem; }
     .nav-buttons { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px; background: rgba(0,0,0,0.2); }
-    .nav-btn { background: #1e2f3f; color: #e0e0e0; border: none; padding: 8px 20px; border-radius: 40px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
-    .nav-btn:hover, .nav-btn.active { background: #4ecca3; color: #0a1c2a; transform: scale(1.02); }
-    .container { display: flex; height: calc(100vh - 220px); padding: 0 20px 20px; gap: 20px; }
-    .channel-list { width: 340px; background: rgba(0,0,0,0.45); backdrop-filter: blur(6px); overflow-y: auto; border-radius: 24px; padding: 14px; }
-    .video-container { flex: 1; background: #03090e; border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; }
-    .video-header { background: rgba(0,0,0,0.7); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; }
-    .video-title { font-size: 1.25rem; color: #4ecca3; }
-    .video-wrapper { flex: 1; background: #000; position: relative; }
-    video { width: 100%; height: 100%; object-fit: contain; }
-    .channel-item { padding: 10px 12px; margin: 6px 0; border-radius: 16px; background: rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-    .channel-item:hover { background: rgba(78,204,163,0.3); }
-    .res-select { background: #1e2f3f; color: white; border: 1px solid #4ecca3; padding: 5px 10px; border-radius: 8px; font-size: 0.85rem; min-width: 85px; }
-    .spinner { width: 30px; height: 30px; border: 4px solid rgba(78,204,163,0.3); border-top-color: #4ecca3; border-radius: 50%; animation: spin 1s linear infinite; margin: 40px auto; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .nav-btn { background: #1e2f3f; color: #e0e0e0; border: none; padding: 8px 20px; border-radius: 40px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; font-size: 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .nav-btn:hover, .nav-btn.active { background: #4ecca3; color: #0a1c2a; transform: scale(1.02); box-shadow: 0 4px 10px rgba(78,204,163,0.3); }
+    .container { display: flex; height: calc(100vh - 220px); padding: 0 20px 20px 20px; gap: 20px; }
+    .channel-list { width: 290px; background: rgba(0,0,0,0.45); backdrop-filter: blur(6px); overflow-y: auto; border-radius: 24px; padding: 14px; scrollbar-width: thin; }
+    .video-container { flex: 1; background: #03090e; border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #2c5f6e; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    .video-header { background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #4ecca355; }
+    .video-title { font-size: 1.25rem; font-weight: bold; color: #4ecca3; letter-spacing: -0.2px; }
+    .video-controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .btn { background: #1f3e48; color: white; border: none; padding: 7px 16px; border-radius: 40px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
+    .btn:hover { background: #4ecca3; color: #0a1c2a; transform: translateY(-1px); }
+    .ua-selector { padding: 4px 0; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 8px; }
+    .ua-selector select { background: #1e2f3f; color: white; border: 1px solid #4ecca3; padding: 5px 12px; border-radius: 28px; cursor: pointer; font-size: 0.75rem; }
+    .video-wrapper { flex: 1; position: relative; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    video, iframe { width: 100%; height: 100%; object-fit: contain; border: none; background: black; }
     .error-msg { text-align: center; padding: 40px; color: #ffbb99; }
+    .category-title { font-weight: 700; font-size: 1.1rem; padding: 12px 6px 6px 6px; color: #4ecca3; border-bottom: 2px solid #4ecca3; margin: 12px 0 8px 0; letter-spacing: -0.2px; }
+    .subgroup-title { font-weight: 600; font-size: 0.82rem; padding: 8px 10px 4px 10px; color: #a8e6d2; border-left: 3px solid #4ecca3; margin: 10px 0 4px 4px; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.85; background: rgba(78,204,163,0.07); border-radius: 0 8px 8px 0; }
+    .channel-item { padding: 9px 12px; margin: 6px 0; cursor: grab; border-radius: 20px; transition: all 0.2s; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); backdrop-filter: blur(2px); user-select: none; }
+    .channel-item:active { cursor: grabbing; }
+    .channel-item.drag-over { border: 2px dashed #4ecca3; background: #4ecca355; }
+    .channel-item.blue   { background: rgba(0,123,255,0.75); }
+    .channel-item:hover  { opacity: 0.9; transform: translateX(5px); filter: brightness(1.05); }
+    .channel-item.active { box-shadow: 0 0 0 2px #4ecca3, 0 0 12px #4ecca3; font-weight: bold; background: rgba(0,0,0,0.5); }
+    .fav-btn { background: none; border: none; color: #ffd966; cursor: pointer; font-size: 1.2rem; margin-left: 8px; }
+    .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid rgba(78,204,163,0.3); border-radius: 50%; border-top-color: #4ecca3; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #4ecca3; border-radius: 10px; }
+    .close-btn { display: none; position: fixed; top: 20px; right: 20px; z-index: 1001; background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 40px; cursor: pointer; font-weight: bold; }
+    .js-toggle-off { background: #c95a2e !important; box-shadow: 0 0 8px #ff884d; }
+    .buffer-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: #4ecca3; width: 0%; transition: width 0.3s; z-index: 10; opacity: 0.7; }
+    @media (max-width: 768px) {
+      .container { flex-direction: column; height: auto; }
+      .channel-list { position: fixed; left: 0; top: 0; width: 85%; max-width: 320px; height: 100%; z-index: 1000; border-radius: 0 24px 24px 0; padding: 20px; transform: translateX(-100%); transition: transform 0.25s ease; overflow-y: auto; background: #0a1c28f2; backdrop-filter: blur(16px); }
+      .channel-list.show { transform: translateX(0); }
+      .close-btn { display: block; }
+    }
+    .tv-mode .video-container { border-radius: 0; }
   </style>
 </head>
 <body>
 <div class="header">
   <h1>📡 Telewebion · iFilm</h1>
-  <p>Välj kanal + upplösning (1080p / 720p / 576p)</p>
+  <p>Dra för att ändra ordning • Klicka för att spela</p>
 </div>
 
 <div class="nav-buttons">
-  <button class="nav-btn active" onclick="showAll(this)">Alla</button>
+  <button class="nav-btn active" onclick="showAll(this)">🎞 Alla kanaler</button>
   <button class="nav-btn" onclick="filterSubgroup(this,'sarasari')">🌐 Sarasari</button>
   <button class="nav-btn" onclick="filterSubgroup(this,'ostani')">🏙️ Ostani</button>
   <button class="nav-btn" onclick="filterSubgroup(this,'ekhtesasi')">🎯 Ekhtesasi</button>
@@ -45,159 +70,677 @@
 
 <div class="container">
   <aside class="channel-list" id="channel-list">
+    <button class="close-btn" onclick="toggleList()">✕ Stäng</button>
     <div id="ch-container"></div>
   </aside>
   <main class="video-container">
     <div class="video-header">
-      <div class="video-title" id="ch-title">Välj kanal och upplösning</div>
-      <button onclick="reload()" style="padding:8px 16px; background:#4ecca3; color:#000; border:none; border-radius:20px; cursor:pointer;">↻ Ladda om</button>
+      <div>
+        <div class="video-title" id="ch-title">📡 Välj en kanal</div>
+        <div class="ua-selector">UA:
+          <select id="ua-select" onchange="if(cur) reload()">
+            <option value="">Auto (standard)</option>
+            <option value="Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)">📱 iPhone</option>
+            <option value="Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X)">📲 iPad</option>
+            <option value="Mozilla/5.0 (Linux; Android 10)">🤖 Android</option>
+          </select>
+        </div>
+      </div>
+      <div class="video-controls">
+        <button class="btn" onclick="toggleList()">📺 Kanaler</button>
+        <button class="btn" onclick="pip()">⧉ PiP</button>
+        <button class="btn" onclick="fs()">⛶ Fullskärm</button>
+        <button class="btn" onclick="reload()">↻ Ladda om</button>
+        <button class="btn" id="tv-btn" onclick="toggleTV()">📺 TV-läge</button>
+        <button class="btn" id="jsToggleBtn" onclick="toggleJSengine()">⚙️ JS PÅ</button>
+      </div>
     </div>
     <div class="video-wrapper" id="vwrap">
-      <div class="error-msg"><h3>👈 Välj en kanal från listan</h3></div>
+      <div class="error-msg"><h3>👈 Välj en kanal</h3><p style="font-size:13px; margin-top:12px;">✨ Dra för att ändra ordning • Tryck JS AV om kanalen inte startar</p></div>
     </div>
   </main>
 </div>
 
 <script>
-// ==================== KANALDATA ====================
-const baseDomain = "https://live-azd1102.telewebion.ir/ek/";
+  // ---- Subgroup definitions for Telewebion ----
+  const subgroups = {
+    telewebion: [
+      {
+        key: 'sarasari',
+        label: '🌐 Sarasari',
+        channels: [
+          { name: 'TV1',      url: 'https://live-azd1102.telewebion.ir/ek/tv1/live/1080p/index.m3u8',      icon: '📡' },
+          { name: 'TV2',      url: 'https://live-azd1102.telewebion.ir/ek/tv2/live/1080p/index.m3u8',      icon: '📡' },
+          { name: 'TV3',      url: 'https://live-azd1102.telewebion.ir/ek/tv3/live/1080p/index.m3u8',      icon: '📡' },
+          { name: 'TV4',      url: 'https://live-azd1102.telewebion.ir/ek/tv4/live/576p/index.m3u8',       icon: '📡' },
+          { name: 'TAMASHA',  url: 'https://live-azd1102.telewebion.ir/ek/hdtest/live/1080p/index.m3u8',   icon: '🎭' },
+          { name: 'POOYA',    url: 'https://live-azd1102.telewebion.ir/ek/pooya/live/1080p/index.m3u8',    icon: '🧸' },
+          { name: 'IFILM',    url: 'https://live-azd1102.telewebion.ir/ek/ifilm/live/1080p/index.m3u8',    icon: '🎬' },
+          { name: 'NAMAYESH', url: 'https://live-azd1102.telewebion.ir/ek/namayesh/live/1080p/index.m3u8', icon: '🎪' },
+          { name: 'TEHRAN',   url: 'https://live-azd1102.telewebion.ir/ek/tehran/live/576p/index.m3u8',    icon: '🏙️' },
+          { name: 'MOSTANAD', url: 'https://live-azd1102.telewebion.ir/ek/mostanad/live/1080p/index.m3u8', icon: '📽️' },
+          { name: 'QURAN',    url: 'https://live-azd1102.telewebion.ir/ek/quran/live/1080p/index.m3u8',    icon: '📖' },
+          { name: 'AMOUZESH', url: 'https://live-azd1102.telewebion.ir/ek/amouzesh/live/576p/index.m3u8',  icon: '📚' },
+          { name: 'SALAMAT',  url: 'https://live-azd1102.telewebion.ir/ek/salamat/live/576p/index.m3u8',   icon: '💚' },
+          { name: 'OFOGH',    url: 'https://live-azd1102.telewebion.ir/ek/ofogh/live/1080p/index.m3u8',    icon: '🌟' },
+          { name: 'OMID',     url: 'https://live-azd1102.telewebion.ir/ek/omid/live/576p/index.m3u8',      icon: '⭐' },
+          { name: 'SEPEHR',   url: 'https://live-azd1102.telewebion.ir/ek/sepehr/live/1080p/index.m3u8',   icon: '🕌' },
+          { name: 'IRINN',    url: 'https://live-azd1102.telewebion.ir/ek/irinn/live/1080p/index.m3u8',    icon: '📰' },
+          { name: 'TV1+',     url: 'https://live-azd1102.telewebion.ir/ek/tv1plus/live/1080p/index.m3u8',  icon: '🧑' },
+          { name: 'Nava',     url: 'https://live-azd1102.telewebion.ir/ek/nava/live/1080p/index.m3u8',     icon: '🎵' },
+          { name: 'Nama',     url: 'https://live-azd1102.telewebion.ir/ek/nama/live/1080p/index.m3u8',     icon: '🎼' },
+        ]
+      },
+      {
+        key: 'ostani',
+        label: '🏙️ Ostani',
+        channels: [
+          { name: 'URMIA',      url: 'https://live-azd1102.telewebion.ir/ek/azarbayjangharbi/live/576p/index.m3u8',  icon: '🌍' },
+          { name: 'SAHAND',     url: 'https://live-azd1102.telewebion.ir/ek/sahand/live/1080p/index.m3u8',           icon: '⛰️' },
+          { name: 'ALBORZ',     url: 'https://live-azd1102.telewebion.ir/ek/alborz/live/1080p/index.m3u8',           icon: '🏔️' },
+          { name: 'ESFAHAN',    url: 'https://live-azd1102.telewebion.ir/ek/esfahan/live/1080p/index.m3u8',          icon: '🕌' },
+          { name: 'SABALAN',    url: 'https://live-azd1102.telewebion.ir/ek/sabalan/live/1080p/index.m3u8',          icon: '🗻' },
+          { name: 'ILAM',       url: 'https://live-azd1102.telewebion.ir/ek/ilam/live/576p/index.m3u8',              icon: '🏞️' },
+          { name: 'BUSHEHR',    url: 'https://live-azd1102.telewebion.ir/ek/bushehr/live/1080p/index.m3u8',          icon: '🌊' },
+          { name: 'JAHANBIN',   url: 'https://live-azd1102.telewebion.ir/ek/jahanbin/live/1080p/index.m3u8',         icon: '🔭' },
+          { name: 'ABADAN',     url: 'https://live-azd1102.telewebion.ir/ek/abadan/live/1080p/index.m3u8',           icon: '🏭' },
+          { name: 'KH.RAZAVI',  url: 'https://live-azd1102.telewebion.ir/ek/khorasanrazavi/live/1080p/index.m3u8',   icon: '🕌' },
+          { name: 'ATRAK',      url: 'https://live-azd1102.telewebion.ir/ek/atrak/live/1080p/index.m3u8',            icon: '🌊' },
+          { name: 'KHALIJFARS', url: 'https://live-azd1102.telewebion.ir/ek/khalijefars/live/1080p/index.m3u8',      icon: '🌊' },
+          { name: 'KHOZESTAN',  url: 'https://live-azd1102.telewebion.ir/ek/khoozestan/live/1080p/index.m3u8',       icon: '🏜️' },
+          { name: 'ESHRAGH',    url: 'https://live-azd1102.telewebion.ir/ek/eshragh/live/1080p/index.m3u8',          icon: '✨' },
+          { name: 'SEMNAN',     url: 'https://live-azd1102.telewebion.ir/ek/semnan/live/1080p/index.m3u8',           icon: '🏜️' },
+          { name: 'HAMON',      url: 'https://live-azd1102.telewebion.ir/ek/hamoon/live/1080p/index.m3u8',           icon: '🏞️' },
+          { name: 'FARS',       url: 'https://live-azd1102.telewebion.ir/ek/fars/live/1080p/index.m3u8',             icon: '🏛️' },
+          { name: 'GHAZVIN',    url: 'https://live-azd1102.telewebion.ir/ek/qazvin/live/1080p/index.m3u8',           icon: '🏛️' },
+          { name: 'NOOR',       url: 'https://live-azd1102.telewebion.ir/ek/noor/live/1080p/index.m3u8',             icon: '💡' },
+          { name: 'LORESTAN',   url: 'https://live-azd1102.telewebion.ir/ek/aflak/live/1080p/index.m3u8',            icon: '🏞️' },
+          { name: 'KERMAN',     url: 'https://live-azd1102.telewebion.ir/ek/kerman/live/1080p/index.m3u8',           icon: '🏜️' },
+          { name: 'ZAGROS',     url: 'https://live-azd1102.telewebion.ir/ek/zagros/live/1080p/index.m3u8',           icon: '⛰️' },
+          { name: 'DENA',       url: 'https://live-azd1102.telewebion.ir/ek/dena/live/1080p/index.m3u8',             icon: '⛰️' },
+          { name: 'KISH',       url: 'https://live-azd1102.telewebion.ir/ek/kish/live/576p/index.m3u8',              icon: '🏝️' },
+          { name: 'GOLESTAN',   url: 'https://live-azd1102.telewebion.ir/ek/sabz/live/576p/index.m3u8',              icon: '🌳' },
+          { name: 'BARAN',      url: 'https://live-azd1102.telewebion.ir/ek/baran/live/576p/index.m3u8',             icon: '☔' },
+          { name: 'KORDESTAN',  url: 'https://live-azd1102.telewebion.ir/ek/kordestan/live/1080p/index.m3u8',        icon: '🏔️' },
+          { name: 'YAZD',       url: 'https://live-azd1102.telewebion.ir/ek/taban/live/1080p/index.m3u8',            icon: '🏜️' },
+          { name: 'TABARESTAN', url: 'https://live-azd1102.telewebion.ir/ek/tabarestan/live/1080p/index.m3u8',       icon: '🌳' },
+          { name: 'AFTAB',      url: 'https://live-azd1102.telewebion.ir/ek/aftab/live/1080p/index.m3u8',            icon: '☀️' },
+          { name: 'MAHABAD',    url: 'https://live-azd1102.telewebion.ir/ek/mahabad/live/1080p/index.m3u8',          icon: '🏞️' },
+          { name: 'HAMADAN',    url: 'https://live-azd1102.telewebion.ir/ek/sina/live/1080p/index.m3u8',             icon: '🏛️' },
+          { name: 'KHAVARAN',   url: 'https://live-azd1102.telewebion.ir/ek/khavaran/live/1080p/index.m3u8',         icon: '🌅' },
+        ]
+      },
+      {
+        key: 'ekhtesasi',
+        label: '🎯 Ekhtesasi',
+        channels: [
+          { name: 'HABIB',        url: 'https://live-azd1102.telewebion.ir/ek/habib/live/720p/index.m3u8',              icon: '🤝' },
+          { name: 'Golkhane',     url: 'https://live-azd1106.telewebion.ir/ek/golkhane/live/720p/index.m3u8',           icon: '🌐' },
+          { name: 'Labbayk',      url: 'https://live-azd1104.telewebion.ir/ek/labbayk/live/720p/index.m3u8',            icon: '🌐' },
+          { name: 'Maddahi',      url: 'https://live-azd1111.telewebion.ir/ek/tekyemadahi/live/720p/index.m3u8',        icon: '🌐' },
+          { name: 'Energi',       url: 'https://live-azd1112.telewebion.ir/ek/baenergy/live/1080p/index.m3u8',          icon: '🎬' },
+          { name: 'Velayat',      url: 'https://live-azd1102.telewebion.ir/ek/velayat/live/720p/index.m3u8',            icon: '📖' },
+          { name: 'Karoon',       url: 'https://live-azd1110.telewebion.ir/ek/karoon/live/1080p/index.m3u8',            icon: '🎨' },
+          { name: 'Palestine',    url: 'https://live-azd1113.telewebion.ir/ek/palestine/live/720p/index.m3u8',          icon: '📅' },
+          { name: 'Nesfejahan',   url: 'https://live-azd1109.telewebion.ir/ek/nesfejahan/live/576p/index.m3u8',         icon: '🌿' },
+        ]
+      },
+      {
+        key: 'radio',
+        label: '📻 Radio',
+        channels: [
+          { name: 'Radio Ava',       url: 'https://live-azd1103.telewebion.ir/ek/radioava/live/576p/index.m3u8',        icon: '🕌' },
+          { name: 'Radio Namayesh',  url: 'https://live-azd1101.telewebion.ir/ek/radionamayesh/live/576p/index.m3u8',   icon: '🎵' },
+          { name: 'Radio Tehran',    url: 'https://live-azd1103.telewebion.ir/ek/radiotehran/live/576p/index.m3u8',     icon: '👥' },
+          { name: 'Radio Payam',     url: 'https://live-azd1109.telewebion.ir/ek/radiopayam/live/576p/index.m3u8',      icon: '🛍️' },
+          { name: 'Radio Salamat',   url: 'https://live-azd1103.telewebion.ir/ek/radiosalamat/live/576p/index.m3u8',    icon: '🛍️' },
+          { name: 'Radio Tartil',    url: 'https://live-azd1107.telewebion.ir/ek/radiotartil/live/576p/index.m3u8',     icon: '🛍️' },
+          { name: 'Radio Iran',      url: 'https://live-azd1113.telewebion.ir/ek/radioiran/live/576p/index.m3u8',       icon: '🛍️' },
+        ]
+      }
+    ]
+  };
 
-const telewebionChannels = [
-  // Sarasari
-  {name: "TV1", base: "tv1", icon: "📡", subgroup: "sarasari"},
-  {name: "TV2", base: "tv2", icon: "📡", subgroup: "sarasari"},
-  {name: "TV3", base: "tv3", icon: "📡", subgroup: "sarasari"},
-  {name: "TV4", base: "tv4", icon: "📡", subgroup: "sarasari"},
-  {name: "TAMASHA", base: "hdtest", icon: "🎭", subgroup: "sarasari"},
-  {name: "POOYA", base: "pooya", icon: "🧸", subgroup: "sarasari"},
-  {name: "IFILM", base: "ifilm", icon: "🎬", subgroup: "sarasari"},
-  {name: "NAMAYESH", base: "namayesh", icon: "🎪", subgroup: "sarasari"},
-  {name: "TEHRAN", base: "tehran", icon: "🏙️", subgroup: "sarasari"},
-  {name: "MOSTANAD", base: "mostanad", icon: "📽️", subgroup: "sarasari"},
-  {name: "QURAN", base: "quran", icon: "📖", subgroup: "sarasari"},
-  {name: "AMOUZESH", base: "amouzesh", icon: "📚", subgroup: "sarasari"},
-  {name: "SALAMAT", base: "salamat", icon: "💚", subgroup: "sarasari"},
-  {name: "OFOGH", base: "ofogh", icon: "🌟", subgroup: "sarasari"},
-  {name: "OMID", base: "omid", icon: "⭐", subgroup: "sarasari"},
-  {name: "SEPEHR", base: "sepehr", icon: "🕌", subgroup: "sarasari"},
-  {name: "IRINN", base: "irinn", icon: "📰", subgroup: "sarasari"},
-  // Ostani (exempel – lägg till fler om du vill)
-  {name: "ESFAHAN", base: "esfahan", icon: "🕌", subgroup: "ostani"},
-  {name: "FARS", base: "fars", icon: "🏛️", subgroup: "ostani"},
-  {name: "KHOZESTAN", base: "khoozestan", icon: "🏜️", subgroup: "ostani"},
-  // Lägg till resten av dina Ostani, Ekhtesasi, Radio här om du vill ha alla
-];
+  const ifilmRaw = [
+    { name: 'iFilm Farsi',   url: 'https://live.presstv.ir/hls/ifilmfa.m3u8',  color: 'blue' },
+    { name: 'iFilm Dari',    url: 'https://live.presstv.ir/hls/ifilm2.m3u8',   color: 'blue' },
+    { name: 'iFilm English', url: 'https://live.presstv.ir/hls/ifilmen.m3u8',  color: 'blue' },
+    { name: 'iFilm Arabic',  url: 'https://live.presstv.ir/hls/ifilmar.m3u8',  color: 'blue' }
+  ];
 
-const ifilmChannels = [
-  {name: "iFilm Farsi", url: "https://live.presstv.ir/hls/ifilmfa.m3u8", color: "blue"},
-  {name: "iFilm English", url: "https://live.presstv.ir/hls/ifilmen.m3u8", color: "blue"},
-  {name: "iFilm Arabic", url: "https://live.presstv.ir/hls/ifilmar.m3u8", color: "blue"},
-];
+  function buildTelewebionFlat() {
+    const flat = [];
+    for (const sg of subgroups.telewebion) {
+      for (const ch of sg.channels) flat.push({...ch, subgroup: sg.key});
+    }
+    return flat;
+  }
 
-const resolutions = ["1080p", "720p", "576p"];
+  function loadOrder(cat) { try { const o = localStorage.getItem(`order_${cat}`); return o ? JSON.parse(o) : null; } catch(e){ return null; } }
+  function saveOrder(cat, arr) { localStorage.setItem(`order_${cat}`, JSON.stringify(arr.map(c=>c.url))); }
 
-let cur = null;
-let hlsInst = null;
-let curFilter = null;
-let curSubgroup = null;
+  function applyStoredOrderFlat(flat, catKey) {
+    const stored = loadOrder(catKey);
+    if(!stored || !stored.length) return flat;
+    const map = new Map(flat.map(c=>[c.url, c]));
+    const ordered = [];
+    for(let url of stored) if(map.has(url)) ordered.push(map.get(url));
+    for(let c of flat) if(!ordered.includes(c)) ordered.push(c);
+    return ordered;
+  }
 
-// Skapa full URL
-function getUrl(base, res) {
-  return `${baseDomain}${base}/live/${res}/index.m3u8`;
-}
+  const telewebionFlat = applyStoredOrderFlat(buildTelewebionFlat(), 'telewebion');
+  const ifilmOrdered   = applyStoredOrderFlat([...ifilmRaw], 'ifilm');
 
-function render(filter, sgFilter) {
-  curFilter = filter;
-  curSubgroup = sgFilter;
-  let html = '';
+  const channels = {
+    telewebion: telewebionFlat,
+    ifilm: ifilmOrdered
+  };
 
-  // Telewebion
-  if (filter === 'telewebion' || !filter) {
-    let filtered = telewebionChannels;
-    if (sgFilter) filtered = telewebionChannels.filter(ch => ch.subgroup === sgFilter);
+  function reorderCategory(catKey, newArr) {
+    channels[catKey] = newArr;
+    saveOrder(catKey, newArr);
+  }
 
-    html += `<div class="category-title">Telewebion ${sgFilter ? sgFilter : ''}</div>`;
-    filtered.forEach(ch => {
-      html += `
-        <div class="channel-item">
-          <span>${ch.icon} ${ch.name}</span>
-          <select class="res-select" onchange="playThis('${ch.base}', '${ch.name}', this.value)">
-            ${resolutions.map(r => `<option value="${r}">${r}</option>`).join('')}
-          </select>
-        </div>`;
+  let hlsInst = null;
+  let dashInst = null;
+  let cur = null;
+  let favs = [];
+  let jsEnabled = true;
+  let tvMode = false;
+
+  // --- IMPROVED: Retry/reconnect state ---
+  let retryCount = 0;
+  let retryTimer = null;
+  let keepAliveTimer = null;
+  let stallTimer = null;
+  let lastTime = -1;
+  let lastTimeStamp = Date.now();
+
+  function isTV() {
+    const ua = navigator.userAgent || '';
+    return /SmartTV|webOS|SMART-TV|HbbTV|NetCast|BRAVIA|Tizen/i.test(ua) ||
+      (window.innerWidth >= 1920 && !('ontouchstart' in window) && navigator.maxTouchPoints === 0);
+  }
+
+  // --- IMPROVED: Much larger buffers, more retries, lower latency tolerance ---
+  function getHlsConfig(referer) {
+    const tv = isTV() || tvMode;
+    return {
+      enableWorker: true,
+      startPosition: -1,
+      lowLatencyMode: false,
+
+      // Large buffer to absorb network hiccups
+      maxBufferLength: 60,
+      maxMaxBufferLength: 300,
+      maxBufferSize: 200 * 1000 * 1000,   // 200 MB
+      maxBufferHole: 2.0,                  // Skip over gaps up to 2s without pausing
+
+      // Live stream sync - stay a bit behind to avoid edge stalls
+      liveSyncDurationCount: 8,
+      liveMaxLatencyDurationCount: 20,
+      liveDurationInfinity: true,
+
+      // Aggressive retry on all failures
+      fragLoadingMaxRetry: 20,
+      fragLoadingRetryDelay: 500,
+      fragLoadingMaxRetryTimeout: 30000,
+      manifestLoadingMaxRetry: 20,
+      manifestLoadingRetryDelay: 500,
+      manifestLoadingMaxRetryTimeout: 30000,
+      levelLoadingMaxRetry: 20,
+      levelLoadingRetryDelay: 500,
+      levelLoadingMaxRetryTimeout: 30000,
+
+      // Start at lowest level to reduce initial buffering stalls
+      startLevel: -1,
+      autoStartOnStall: true,
+
+      // Allow jumping over small buffer holes automatically
+      nudgeMaxRetry: 10,
+      nudgeOffset: 0.2,
+
+      // Longer timeout before abandoning a segment
+      fragLoadingTimeOut: 20000,
+      manifestLoadingTimeOut: 20000,
+      levelLoadingTimeOut: 20000,
+
+      xhrSetup(xhr) {
+        const ua = document.getElementById('ua-select').value;
+        if (ua) try { xhr.setRequestHeader('User-Agent', ua); } catch(err){}
+        if (referer) try { xhr.setRequestHeader('Referer', referer); } catch(err){}
+      }
+    };
+  }
+
+  // --- IMPROVED: Aggressive stall watcher ---
+  function startStallWatcher(vid) {
+    clearStallWatcher();
+    lastTime = -1;
+    lastTimeStamp = Date.now();
+
+    stallTimer = setInterval(() => {
+      if (!vid || vid.paused || vid.ended || vid.readyState < 2) return;
+
+      const now = Date.now();
+      const t = vid.currentTime;
+
+      if (t === lastTime) {
+        const stalledFor = (now - lastTimeStamp) / 1000;
+
+        if (stalledFor >= 3) {
+          // Try to jump ahead in buffer
+          try {
+            const ranges = vid.buffered;
+            if (ranges.length > 0) {
+              const end = ranges.end(ranges.length - 1);
+              if (end - t > 0.5) {
+                vid.currentTime = end - 0.3;
+              }
+            }
+          } catch(e) {}
+
+          // Resume loading
+          if (hlsInst) {
+            try { hlsInst.startLoad(); } catch(e) {}
+          }
+
+          vid.play().catch(() => {});
+        }
+
+        // If stalled for too long, do a soft reconnect
+        if (stalledFor >= 12) {
+          softReconnect();
+        }
+      } else {
+        lastTime = t;
+        lastTimeStamp = now;
+      }
+    }, 1000);
+  }
+
+  function clearStallWatcher() {
+    if (stallTimer) { clearInterval(stallTimer); stallTimer = null; }
+  }
+
+  // --- NEW: Soft reconnect - reattaches HLS without flickering ---
+  function softReconnect() {
+    if (!cur || !hlsInst) return;
+    console.log('[Player] Soft reconnect triggered');
+    try {
+      hlsInst.stopLoad();
+      setTimeout(() => {
+        if (!hlsInst) return;
+        hlsInst.loadSource(cur.url);
+        hlsInst.startLoad(-1);
+        const vid = document.getElementById('vplayer');
+        if (vid) vid.play().catch(() => {});
+        lastTime = -1;
+        lastTimeStamp = Date.now();
+      }, 800);
+    } catch(e) {}
+  }
+
+  // --- NEW: Keep-alive ping to detect connection drops early ---
+  function startKeepAlive() {
+    stopKeepAlive();
+    keepAliveTimer = setInterval(() => {
+      if (!cur || !hlsInst) return;
+      const vid = document.getElementById('vplayer');
+      if (!vid || vid.paused || vid.ended) return;
+      // If readyState drops to HAVE_NOTHING, reconnect
+      if (vid.readyState === 0) {
+        softReconnect();
+      }
+    }, 5000);
+  }
+
+  function stopKeepAlive() {
+    if (keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; }
+  }
+
+  // --- NEW: Exponential backoff retry ---
+  function scheduleRetry(url, name, referer) {
+    if (retryTimer) clearTimeout(retryTimer);
+    const delay = Math.min(1000 * Math.pow(1.5, retryCount), 15000);
+    retryCount++;
+    console.log(`[Player] Retry #${retryCount} in ${Math.round(delay/1000)}s`);
+    retryTimer = setTimeout(() => {
+      if (cur && cur.url === url) {
+        playInternal(url, name, referer, false);
+      }
+    }, delay);
+  }
+
+  try { favs = JSON.parse(localStorage.getItem('xomfavs') || '[]'); } catch(e) { favs = []; }
+  let curFilter = null;
+  let curSubgroup = null;
+  let dragSource = null;
+
+  function esc(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+  function destroyPlayers() {
+    clearStallWatcher();
+    stopKeepAlive();
+    if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+    if (hlsInst) { try { hlsInst.destroy(); } catch(e){} hlsInst = null; }
+    if (dashInst) { try { dashInst.reset(); } catch(e){} dashInst = null; }
+    retryCount = 0;
+  }
+
+  function getSubgroupLabel(subgroupKey) {
+    const sg = subgroups.telewebion.find(s => s.key === subgroupKey);
+    return sg ? sg.label : '';
+  }
+
+  function render(filter, sgFilter) {
+    curFilter = filter;
+    curSubgroup = sgFilter;
+    const catNames = { telewebion:'📡 Telewebion', ifilm:'🎬 iFilm' };
+
+    const chRow = (ch, idx, catKey) => {
+      const star = favs.some(f=>f.url===ch.url) ? '⭐' : '☆';
+      const activeClass = (cur && cur.url===ch.url) ? 'active' : '';
+      const colorClass = ch.color || '';
+      return `<div class="channel-item ${colorClass} ${activeClass}" draggable="true" data-url="${esc(ch.url)}" data-name="${esc(ch.name)}" data-cat="${catKey}" data-idx="${idx}">
+        <span>${ch.icon ? ch.icon + ' ' : ''}${ch.name}</span>
+        <button class="fav-btn" onclick="event.stopPropagation();fav('${esc(ch.url)}','${esc(ch.name)}')">${star}</button>
+      </div>`;
+    };
+
+    let html = '';
+
+    if (filter === 'telewebion' || (!filter)) {
+      const catArr = channels.telewebion;
+      const sgMap = new Map();
+      for (const sg of subgroups.telewebion) sgMap.set(sg.key, { label: sg.label, items: [] });
+      catArr.forEach((ch, idx) => {
+        const sgKey = ch.subgroup || 'sarasari';
+        if (sgMap.has(sgKey)) sgMap.get(sgKey).items.push({ch, idx});
+      });
+
+      if (sgFilter) {
+        const sg = sgMap.get(sgFilter);
+        if (sg && sg.items.length > 0) {
+          html += `<div class="category-title">${sg.label} (${sg.items.length})</div>`;
+          html += sg.items.map(({ch, idx}) => chRow(ch, idx, 'telewebion')).join('');
+        }
+      } else {
+        html += `<div class="category-title">${catNames.telewebion} (${catArr.length})</div>`;
+        for (const [sgKey, sg] of sgMap) {
+          if (sg.items.length === 0) continue;
+          html += `<div class="subgroup-title">${sg.label}</div>`;
+          html += sg.items.map(({ch, idx}) => chRow(ch, idx, 'telewebion')).join('');
+        }
+      }
+    }
+
+    if ((filter === 'ifilm' || (!filter)) && !sgFilter) {
+      const catArr = channels.ifilm;
+      html += `<div class="category-title">${catNames.ifilm} (${catArr.length})</div>`;
+      html += catArr.map((ch, i) => chRow(ch, i, 'ifilm')).join('');
+    }
+
+    document.getElementById('ch-container').innerHTML = html;
+    attachDragListeners();
+    attachChannelEvents();
+  }
+
+  function attachChannelEvents() {
+    document.querySelectorAll('.channel-item').forEach(el => {
+      el.addEventListener('click', function(ev) {
+        if (ev.target.classList.contains('fav-btn')) return;
+        play(this.dataset.url, this.dataset.name, this.dataset.referer || '');
+      });
     });
   }
 
-  // iFilm
-  if ((filter === 'ifilm' || !filter) && !sgFilter) {
-    html += `<div class="category-title">🎬 iFilm</div>`;
-    ifilmChannels.forEach(ch => {
-      html += `
-        <div class="channel-item ${ch.color}" onclick="playFixed('${ch.url}', '${ch.name}')">
-          ${ch.name}
-        </div>`;
+  function attachDragListeners() {
+    document.querySelectorAll('.channel-item[draggable="true"]').forEach(el => {
+      el.addEventListener('dragstart', dragStart);
+      el.addEventListener('dragend', dragEnd);
+      el.addEventListener('dragover', dragOver);
+      el.addEventListener('dragleave', dragLeave);
+      el.addEventListener('drop', drop);
     });
   }
 
-  document.getElementById('ch-container').innerHTML = html;
-}
-
-function playThis(base, name, res) {
-  const url = getUrl(base, res);
-  cur = {url, name, base, res};
-  document.getElementById('ch-title').textContent = `${name} — ${res}`;
-
-  const wrap = document.getElementById('vwrap');
-  wrap.innerHTML = `<div style="display:flex;justify-content:center;align-items:center;height:100%; color:#4ecca3;"><div class="spinner"></div><br>Laddar ${res}...</div>`;
-
-  if (hlsInst) { hlsInst.destroy(); hlsInst = null; }
-
-  wrap.innerHTML = '<video id="vplayer" controls autoplay style="width:100%;height:100%;"></video>';
-  const vid = document.getElementById('vplayer');
-
-  if (Hls.isSupported()) {
-    hlsInst = new Hls({
-      maxBufferLength: 18,
-      liveSyncDurationCount: 3,
-      startLevel: -1
-    });
-    hlsInst.loadSource(url);
-    hlsInst.attachMedia(vid);
-    hlsInst.on(Hls.Events.MANIFEST_PARSED, () => vid.play().catch(() => {}));
-  } else {
-    vid.src = url;
-    vid.play().catch(() => {});
+  function dragStart(e) {
+    dragSource = e.target.closest('.channel-item');
+    if(!dragSource) return;
+    e.dataTransfer.setData('text/plain', 'drag');
+    e.dataTransfer.effectAllowed = 'move';
+    dragSource.style.opacity = '0.5';
   }
-}
-
-function playFixed(url, name) {
-  cur = {url, name};
-  document.getElementById('ch-title').textContent = name;
-  // samma spelarkod som ovan...
-  const wrap = document.getElementById('vwrap');
-  wrap.innerHTML = '<video id="vplayer" controls autoplay style="width:100%;height:100%;"></video>';
-  const vid = document.getElementById('vplayer');
-  if (Hls.isSupported()) {
-    hlsInst = new Hls();
-    hlsInst.loadSource(url);
-    hlsInst.attachMedia(vid);
-  } else {
-    vid.src = url;
+  function dragEnd() {
+    if(dragSource) dragSource.style.opacity = '';
+    document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('drag-over'));
+    dragSource = null;
   }
-  vid.play().catch(() => {});
-}
+  function dragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.target.closest('.channel-item');
+    if(target && target !== dragSource) target.classList.add('drag-over');
+  }
+  function dragLeave(e) {
+    const target = e.target.closest('.channel-item');
+    if(target) target.classList.remove('drag-over');
+  }
+  function drop(e) {
+    e.preventDefault();
+    const targetItem = e.target.closest('.channel-item');
+    if(!dragSource || !targetItem || dragSource === targetItem) { cleanupDrag(); return; }
+    const srcCat = dragSource.dataset.cat;
+    const tgtCat = targetItem.dataset.cat;
+    if(srcCat !== tgtCat) { cleanupDrag(); return; }
+    const srcIdx = parseInt(dragSource.dataset.idx);
+    const tgtIdx = parseInt(targetItem.dataset.idx);
+    if(isNaN(srcIdx) || isNaN(tgtIdx)) { cleanupDrag(); return; }
+    let arr = [...channels[srcCat]];
+    const [moved] = arr.splice(srcIdx, 1);
+    arr.splice(tgtIdx, 0, moved);
+    reorderCategory(srcCat, arr);
+    render(curFilter, curSubgroup);
+    cleanupDrag();
+  }
+  function cleanupDrag() {
+    if(dragSource) dragSource.style.opacity = '';
+    document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('drag-over'));
+    dragSource = null;
+  }
 
-function reload() {
-  if (cur && cur.base) playThis(cur.base, cur.name, cur.res || "576p");
-  else if (cur) playFixed(cur.url, cur.name);
-}
+  function play(url, name, referer) {
+    if (window.innerWidth <= 768) document.getElementById('channel-list').classList.remove('show');
+    cur = {url, name, referer: referer || ''};
+    retryCount = 0;
+    document.getElementById('ch-title').textContent = name;
+    destroyPlayers();
+    const wrap = document.getElementById('vwrap');
+    wrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><div class="spinner"></div><span style="margin-left:12px;">Laddar ${name}…</span></div>`;
+    render(curFilter, curSubgroup);
+    setTimeout(() => playInternal(url, name, referer || '', true), 50);
+  }
 
-function showAll(btn) { document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(null, null); }
-function filterSubgroup(btn, sg) { document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render('telewebion', sg); }
-function filterCat(btn, cat) { document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(cat, null); }
+  function playInternal(url, name, referer, showSpinner) {
+    const wrap = document.getElementById('vwrap');
+    if (!wrap) return;
 
-// Start
-render(null, null);
+    if (!jsEnabled) {
+      wrap.innerHTML = '<video id="vplayer" controls autoplay style="width:100%;height:100%;"></video>';
+      const vid = document.getElementById('vplayer');
+      vid.src = url;
+      vid.play().catch(() => {
+        wrap.innerHTML = `<div class="error-msg"><h3>⚠️ JS AV: Kunde inte spela</h3><p>${url.substring(0,70)}</p><button class="btn" onclick="reload()">↻ Försök igen</button></div>`;
+      });
+      return;
+    }
+
+    // Reuse existing video element if already there (soft reconnect path)
+    let vid = document.getElementById('vplayer');
+    if (!vid) {
+      wrap.innerHTML = '<video id="vplayer" controls autoplay style="width:100%;height:100%;"></video>';
+      vid = document.getElementById('vplayer');
+    }
+
+    // Visibility change: auto-recover when tab regains focus
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    if (Hls.isSupported()) {
+      if (hlsInst) { try { hlsInst.destroy(); } catch(e){} hlsInst = null; }
+      hlsInst = new Hls(getHlsConfig(referer));
+      hlsInst.loadSource(url);
+      hlsInst.attachMedia(vid);
+
+      hlsInst.on(Hls.Events.MANIFEST_PARSED, () => {
+        vid.play().catch(err => console.warn(err));
+        startStallWatcher(vid);
+        startKeepAlive();
+        retryCount = 0;
+      });
+
+      hlsInst.on(Hls.Events.ERROR, (_, d) => {
+        console.warn('[HLS Error]', d.type, d.details, d.fatal);
+        if (!d.fatal) {
+          // Non-fatal: nudge the loader
+          if (d.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR ||
+              d.details === Hls.ErrorDetails.BUFFER_NUDGE_ON_STALL) {
+            try { hlsInst.startLoad(); } catch(e) {}
+            vid.play().catch(()=>{});
+          }
+          return;
+        }
+        // Fatal errors
+        if (d.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          scheduleRetry(url, name, referer);
+        } else if (d.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          try { hlsInst.recoverMediaError(); } catch(e) {}
+          setTimeout(() => { if (hlsInst) hlsInst.swapAudioCodec(); }, 500);
+          setTimeout(() => { if (hlsInst) hlsInst.recoverMediaError(); }, 1000);
+        } else {
+          scheduleRetry(url, name, referer);
+        }
+      });
+
+      // Emergency fragment abort: restart loading immediately
+      hlsInst.on(Hls.Events.FRAG_LOAD_EMERGENCY_ABORTED, () => {
+        setTimeout(() => { if (hlsInst) hlsInst.startLoad(); }, 500);
+      });
+
+      // When a level is loaded, reset retry counter
+      hlsInst.on(Hls.Events.LEVEL_LOADED, () => { retryCount = 0; });
+
+    } else if (vid.canPlayType('application/vnd.apple.mpegurl')) {
+      // Native HLS (Safari/iOS)
+      vid.src = url;
+      vid.addEventListener('error', () => scheduleRetry(url, name, referer), { once: true });
+      vid.addEventListener('stalled', () => {
+        setTimeout(() => { vid.load(); vid.play().catch(()=>{}); }, 1000);
+      });
+      vid.addEventListener('waiting', () => {
+        setTimeout(() => { vid.play().catch(()=>{}); }, 500);
+      });
+      vid.play().catch(() => scheduleRetry(url, name, referer));
+      startStallWatcher(vid);
+      startKeepAlive();
+    } else {
+      showErr();
+    }
+  }
+
+  // --- NEW: Recover when tab becomes visible again ---
+  function onVisibilityChange() {
+    if (document.visibilityState === 'visible' && cur) {
+      const vid = document.getElementById('vplayer');
+      if (!vid) return;
+      if (vid.paused || vid.readyState < 2) {
+        if (hlsInst) {
+          try { hlsInst.startLoad(); } catch(e) {}
+        }
+        vid.play().catch(() => softReconnect());
+      }
+    }
+  }
+
+  function showErr() {
+    document.getElementById('vwrap').innerHTML = `<div class="error-msg"><h3>⚠️ Kunde inte ladda stream</h3><p>Prova att trycka JS AV-knappen ovan.</p><button class="btn" onclick="reload()">↻ Försök igen</button></div>`;
+  }
+
+  function reload() {
+    if (cur) {
+      retryCount = 0;
+      play(cur.url, cur.name, cur.referer);
+    }
+  }
+  function pip() { const v=document.getElementById('vplayer'); if(v && document.pictureInPictureEnabled) { document.pictureInPictureElement ? document.exitPictureInPicture() : v.requestPictureInPicture().catch(()=>{}); } }
+  function fs() { const w=document.getElementById('vwrap'); document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen().catch(()=>{}); }
+
+  function toggleTV() {
+    tvMode = !tvMode;
+    document.body.classList.toggle('tv-mode', tvMode);
+    document.getElementById('tv-btn').textContent = tvMode ? '🖥️ Normal' : '📺 TV-läge';
+    if(tvMode && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+    else if(document.fullscreenElement) document.exitFullscreen();
+    localStorage.setItem('xomtv', tvMode ? '1' : '');
+    if (cur) reload();
+  }
+
+  function toggleJSengine() {
+    jsEnabled = !jsEnabled;
+    const btn = document.getElementById('jsToggleBtn');
+    btn.textContent = jsEnabled ? '⚙️ JS PÅ' : '⚠️ JS AV';
+    btn.classList.toggle('js-toggle-off', !jsEnabled);
+    if (cur) play(cur.url, cur.name, cur.referer);
+    else document.getElementById('vwrap').innerHTML = `<div class="error-msg"><h3>🔘 JS är nu ${jsEnabled ? 'AKTIVERAD' : 'AVSTÄNGD'}</h3><p>Välj en kanal igen.</p></div>`;
+    localStorage.setItem('xom_js_toggle', jsEnabled ? 'on' : 'off');
+  }
+
+  function showAll(btn) {
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    curFilter = null; curSubgroup = null;
+    render(null, null);
+  }
+  function filterCat(btn, cat) {
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    curSubgroup = null;
+    render(cat, null);
+  }
+  function filterSubgroup(btn, sgKey) {
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    render('telewebion', sgKey);
+  }
+  function toggleList() { document.getElementById('channel-list').classList.toggle('show'); }
+  function fav(url, name) {
+    const i = favs.findIndex(f=>f.url===url);
+    i > -1 ? favs.splice(i,1) : favs.push({url,name});
+    localStorage.setItem('xomfavs', JSON.stringify(favs));
+    render(curFilter, curSubgroup);
+  }
+
+  (function loadPrefs() {
+    try {
+      const savedJS = localStorage.getItem('xom_js_toggle');
+      jsEnabled = savedJS !== 'off';
+      const btn = document.getElementById('jsToggleBtn');
+      btn.textContent = jsEnabled ? '⚙️ JS PÅ' : '⚠️ JS AV';
+      btn.classList.toggle('js-toggle-off', !jsEnabled);
+    } catch(err) {}
+    const ua = navigator.userAgent || '';
+    const detectedTV = /SmartTV|webOS|SMART-TV|HbbTV|NetCast|BRAVIA|Tizen/i.test(ua) ||
+      (window.innerWidth >= 1920 && !('ontouchstart' in window) && navigator.maxTouchPoints === 0);
+    if (detectedTV || localStorage.getItem('xomtv') === '1') {
+      document.body.classList.add('tv-mode');
+      tvMode = true;
+      document.getElementById('tv-btn').textContent = '🖥️ Normal';
+    }
+  })();
+
+  render(null, null);
 </script>
 </body>
 </html>
