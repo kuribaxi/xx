@@ -27,12 +27,12 @@ html,body{
 
 body{
   background:#111;
-  color:#fff;
+  color:white;
   font-family:Arial,sans-serif;
 }
 
 .header{
-  background:#1a1a1a;
+  background:#1b1b1b;
   padding:12px;
   text-align:center;
 }
@@ -51,13 +51,13 @@ body{
 }
 
 .nav-btn{
-  flex-shrink:0;
   border:none;
   background:#2d2d2d;
   color:white;
   padding:8px 14px;
   border-radius:18px;
   font-size:13px;
+  flex-shrink:0;
 }
 
 .nav-btn.active{
@@ -71,9 +71,9 @@ body{
 }
 
 .channel-list{
-  width:280px;
+  width:290px;
   overflow-y:auto;
-  background:#1b1b1b;
+  background:#181818;
 }
 
 .video-container{
@@ -89,6 +89,8 @@ body{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
 }
 
 .video-title{
@@ -118,8 +120,8 @@ video{
 .channel-item{
   padding:12px;
   margin:6px;
+  background:#2d2d2d;
   border-radius:12px;
-  background:#2b2b2b;
   cursor:pointer;
   font-size:14px;
 }
@@ -128,17 +130,17 @@ video{
   background:#3b3b3b;
 }
 
-.channel-item.active{
-  border:2px solid #4ecca3;
-}
-
 .btn{
   border:none;
-  background:#2b2b2b;
+  background:#2d2d2d;
   color:white;
-  padding:7px 12px;
+  padding:8px 12px;
   border-radius:18px;
   margin-left:6px;
+}
+
+.btn-red{
+  background:#b33939;
 }
 
 .error-msg{
@@ -148,6 +150,7 @@ video{
   align-items:center;
   flex-direction:column;
   text-align:center;
+  padding:20px;
 }
 
 .spinner{
@@ -168,18 +171,19 @@ video{
 
 @media(max-width:768px){
 
-  .container{
-    flex-direction:column;
-  }
+.container{
+  flex-direction:column;
+}
 
-  .channel-list{
-    width:100%;
-    height:42%;
-  }
+.channel-list{
+  width:100%;
+  height:42%;
+}
 
-  .video-container{
-    height:58%;
-  }
+.video-container{
+  height:58%;
+}
+
 }
 
 </style>
@@ -188,69 +192,75 @@ video{
 <body>
 
 <div class="header">
-  <h1>📡 Telewebion · iFilm</h1>
+<h1>📡 Telewebion · iFilm</h1>
 </div>
 
 <div class="nav-buttons">
 
-  <button class="nav-btn active"
-  onclick="showAll(this)">
-  Alla
-  </button>
+<button class="nav-btn active"
+onclick="showAll(this)">
+Alla
+</button>
 
-  <button class="nav-btn"
-  onclick="filterCategory(this,'telewebion')">
-  Telewebion
-  </button>
+<button class="nav-btn"
+onclick="filterCategory(this,'telewebion')">
+Telewebion
+</button>
 
-  <button class="nav-btn"
-  onclick="filterCategory(this,'ifilm')">
-  iFilm
-  </button>
+<button class="nav-btn"
+onclick="filterCategory(this,'ifilm')">
+iFilm
+</button>
 
 </div>
 
 <div class="container">
 
-  <aside class="channel-list">
-    <div id="channelContainer"></div>
-  </aside>
+<aside class="channel-list">
+<div id="channelContainer"></div>
+</aside>
 
-  <main class="video-container">
+<main class="video-container">
 
-    <div class="video-header">
+<div class="video-header">
 
-      <div class="video-title"
-      id="title">
-      Välj kanal
-      </div>
+<div class="video-title"
+id="title">
+Välj kanal
+</div>
 
-      <div>
+<div>
 
-        <button class="btn"
-        onclick="reload()">
-        ↻
-        </button>
+<button class="btn"
+onclick="reload()">
+↻
+</button>
 
-        <button class="btn"
-        onclick="fullscreenPlayer()">
-        ⛶
-        </button>
+<button class="btn"
+onclick="fullscreenPlayer()">
+⛶
+</button>
 
-      </div>
+<button class="btn btn-red"
+id="jsBtn"
+onclick="toggleJS()">
+⚙️ JS PÅ
+</button>
 
-    </div>
+</div>
 
-    <div class="video-wrapper"
-    id="playerWrap">
+</div>
 
-      <div class="error-msg">
-        <h3>Välj en kanal</h3>
-      </div>
+<div class="video-wrapper"
+id="playerWrap">
 
-    </div>
+<div class="error-msg">
+<h3>Välj kanal</h3>
+</div>
 
-  </main>
+</div>
+
+</main>
 
 </div>
 
@@ -262,6 +272,9 @@ const isiOS =
 let current = null;
 let hls = null;
 let currentFilter = null;
+
+let jsEnabled =
+localStorage.getItem('jsEnabled') !== 'off';
 
 const channels = {
 
@@ -284,48 +297,20 @@ telewebion:[
 {name:'OMID',url:'https://ncdn.telewebion.ir/omid/live/playlist.m3u8'},
 {name:'SEPEHR',url:'https://ncdn.telewebion.ir/sepehr/live/playlist.m3u8'},
 {name:'IRINN',url:'https://ncdn.telewebion.ir/irinn/live/playlist.m3u8'},
-{name:'TV1+',url:'https://ncdn.telewebion.ir/tv1plus/live/playlist.m3u8'},
-{name:'NAVA',url:'https://ncdn.telewebion.ir/nava/live/playlist.m3u8'},
-{name:'NAMA',url:'https://ncdn.telewebion.ir/nama/live/playlist.m3u8'},
 
 {name:'URMIA',url:'https://ncdn.telewebion.ir/azarbayjangharbi/live/playlist.m3u8'},
 {name:'SAHAND',url:'https://ncdn.telewebion.ir/sahand/live/playlist.m3u8'},
 {name:'ALBORZ',url:'https://ncdn.telewebion.ir/alborz/live/playlist.m3u8'},
 {name:'ESFAHAN',url:'https://ncdn.telewebion.ir/esfahan/live/playlist.m3u8'},
-{name:'SABALAN',url:'https://ncdn.telewebion.ir/sabalan/live/playlist.m3u8'},
-{name:'ILAM',url:'https://ncdn.telewebion.ir/ilam/live/playlist.m3u8'},
 {name:'BUSHEHR',url:'https://ncdn.telewebion.ir/bushehr/live/playlist.m3u8'},
-{name:'JAHANBIN',url:'https://ncdn.telewebion.ir/jahanbin/live/playlist.m3u8'},
 {name:'ABADAN',url:'https://ncdn.telewebion.ir/abadan/live/playlist.m3u8'},
-{name:'KH.RAZAVI',url:'https://ncdn.telewebion.ir/khorasanrazavi/live/playlist.m3u8'},
-{name:'ATRAK',url:'https://ncdn.telewebion.ir/atrak/live/playlist.m3u8'},
-{name:'KHALIJFARS',url:'https://ncdn.telewebion.ir/khalijefars/live/playlist.m3u8'},
-{name:'KHOZESTAN',url:'https://ncdn.telewebion.ir/khoozestan/live/playlist.m3u8'},
-{name:'ESHRAGH',url:'https://ncdn.telewebion.ir/eshragh/live/playlist.m3u8'},
-{name:'SEMNAN',url:'https://ncdn.telewebion.ir/semnan/live/playlist.m3u8'},
-{name:'HAMON',url:'https://ncdn.telewebion.ir/hamoon/live/playlist.m3u8'},
 {name:'FARS',url:'https://ncdn.telewebion.ir/fars/live/playlist.m3u8'},
-{name:'GHAZVIN',url:'https://ncdn.telewebion.ir/qazvin/live/playlist.m3u8'},
-{name:'NOOR',url:'https://ncdn.telewebion.ir/noor/live/playlist.m3u8'},
-{name:'LORESTAN',url:'https://ncdn.telewebion.ir/aflak/live/playlist.m3u8'},
 {name:'KERMAN',url:'https://ncdn.telewebion.ir/kerman/live/playlist.m3u8'},
-{name:'ZAGROS',url:'https://ncdn.telewebion.ir/zagros/live/playlist.m3u8'},
-{name:'DENA',url:'https://ncdn.telewebion.ir/dena/live/playlist.m3u8'},
 {name:'KISH',url:'https://ncdn.telewebion.ir/kish/live/playlist.m3u8'},
-{name:'GOLESTAN',url:'https://ncdn.telewebion.ir/sabz/live/playlist.m3u8'},
-{name:'BARAN',url:'https://ncdn.telewebion.ir/baran/live/playlist.m3u8'},
-{name:'KORDESTAN',url:'https://ncdn.telewebion.ir/kordestan/live/playlist.m3u8'},
-{name:'YAZD',url:'https://ncdn.telewebion.ir/taban/live/playlist.m3u8'},
 {name:'TABARESTAN',url:'https://ncdn.telewebion.ir/tabarestan/live/playlist.m3u8'},
-{name:'AFTAB',url:'https://ncdn.telewebion.ir/aftab/live/playlist.m3u8'},
-{name:'MAHABAD',url:'https://ncdn.telewebion.ir/mahabad/live/playlist.m3u8'},
-{name:'HAMADAN',url:'https://ncdn.telewebion.ir/sina/live/playlist.m3u8'},
-{name:'KHAVARAN',url:'https://ncdn.telewebion.ir/khavaran/live/playlist.m3u8'},
 
 {name:'Radio Ava',url:'https://ncdn.telewebion.ir/radioava/live/playlist.m3u8'},
-{name:'Radio Namayesh',url:'https://ncdn.telewebion.ir/radionamayesh/live/playlist.m3u8'},
-{name:'Radio Tehran',url:'https://ncdn.telewebion.ir/radiotehran/live/playlist.m3u8'},
-{name:'Radio Iran',url:'https://ncdn.telewebion.ir/radioiran/live/playlist.m3u8'}
+{name:'Radio Tehran',url:'https://ncdn.telewebion.ir/radiotehran/live/playlist.m3u8'}
 
 ],
 
@@ -339,6 +324,38 @@ ifilm:[
 ]
 
 };
+
+function updateJSButton(){
+
+const btn =
+document.getElementById('jsBtn');
+
+btn.innerHTML =
+jsEnabled ?
+'⚙️ JS PÅ'
+:
+'⚠️ JS AV';
+
+}
+
+function toggleJS(){
+
+jsEnabled = !jsEnabled;
+
+localStorage.setItem(
+'jsEnabled',
+jsEnabled ? 'on' : 'off'
+);
+
+updateJSButton();
+
+if(current){
+
+play(current.url,current.name);
+
+}
+
+}
 
 function render(filter){
 
@@ -382,7 +399,8 @@ function play(url,name){
 
 current = {url,name};
 
-document.getElementById('title').innerText = name;
+document.getElementById('title').innerText =
+name;
 
 if(hls){
 
@@ -403,6 +421,29 @@ wrap.innerHTML = `
 `;
 
 setTimeout(()=>{
+
+if(!jsEnabled){
+
+wrap.innerHTML = `
+<video
+id="video"
+controls
+autoplay
+playsinline
+webkit-playsinline
+x5-playsinline
+src="${url}">
+</video>
+`;
+
+const video =
+document.getElementById('video');
+
+video.play().catch(()=>{});
+
+return;
+
+}
 
 wrap.innerHTML = `
 <video
@@ -441,7 +482,9 @@ hls.loadSource(url);
 
 hls.attachMedia(video);
 
-hls.on(Hls.Events.MANIFEST_PARSED,function(){
+hls.on(
+Hls.Events.MANIFEST_PARSED,
+function(){
 
 video.play().catch(()=>{});
 
@@ -519,6 +562,8 @@ btn.classList.add('active');
 render(cat);
 
 }
+
+updateJSButton();
 
 render();
 
