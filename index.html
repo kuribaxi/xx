@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Telewebion · iFilm | Dra & sortera</title>
+  <title>Telewebion · iFilm | Dra & sortera (äldre iPhone fix)</title>
+  <!-- HLS.js laddas men hanteras robust, fallback vid fel -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -258,31 +258,39 @@
       .close-btn { display: block; }
     }
     .tv-mode .video-container { border-radius: 0; }
+    .compat-badge {
+      background: #4ecca322;
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-left: 10px;
+    }
   </style>
 </head>
 <body>
 <div class="header">
   <h1>📡 Telewebion · iFilm</h1>
-  <p>Dra för att ändra ordning • Klicka för att spela • <span id="compat-note">🔄 Äldre enheter använder native uppspelning</span></p>
+  <p>Dra för att ändra ordning • Klicka för att spela • <span id="compat-note" class="compat-badge">✅ Modern webbläsare</span></p>
 </div>
 <div class="nav-buttons">
-  <button class="nav-btn active" onclick="window.showAll(this)">🎞 Alla kanaler</button>
-  <button class="nav-btn" onclick="window.filterSubgroup(this,'sarasari')">🌐 Sarasari</button>
-  <button class="nav-btn" onclick="window.filterSubgroup(this,'ostani')">🏙️ Ostani</button>
-  <button class="nav-btn" onclick="window.filterSubgroup(this,'ekhtesasi')">🎯 Ekhtesasi</button>
-  <button class="nav-btn" onclick="window.filterSubgroup(this,'radio')">📻 Radio</button>
-  <button class="nav-btn" onclick="window.filterCat(this,'ifilm')">🎬 iFilm</button>
+  <button class="nav-btn active" id="btnAll">🎞 Alla kanaler</button>
+  <button class="nav-btn" id="btnSarasari">🌐 Sarasari</button>
+  <button class="nav-btn" id="btnOstani">🏙️ Ostani</button>
+  <button class="nav-btn" id="btnEkhtesasi">🎯 Ekhtesasi</button>
+  <button class="nav-btn" id="btnRadio">📻 Radio</button>
+  <button class="nav-btn" id="btnIfilm">🎬 iFilm</button>
 </div>
 <div class="container">
   <aside class="channel-list" id="channel-list">
-    <button class="close-btn" onclick="window.toggleList()">✕ Stäng</button>
+    <button class="close-btn" id="closeListBtn">✕ Stäng</button>
     <div id="ch-container"></div>
   </aside>
   <main class="video-container">
     <div class="video-header">
       <div>
         <div class="video-title" id="ch-title">📡 Välj en kanal</div>
-        <div class="ua-selector">UA: <select id="ua-select" onchange="if(window.cur) window.reload()">
+        <div class="ua-selector">UA: <select id="ua-select">
           <option value="">Auto (standard)</option>
           <option value="Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)">📱 iPhone</option>
           <option value="Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X)">📲 iPad</option>
@@ -290,259 +298,433 @@
         </select></div>
       </div>
       <div class="video-controls">
-        <button class="btn" onclick="window.toggleList()">📺 Kanaler</button>
-        <button class="btn" onclick="window.pip()">⧉ PiP</button>
-        <button class="btn" onclick="window.fs()">⛶ Fullskärm</button>
-        <button class="btn" onclick="window.reload()">↻ Ladda om</button>
-        <button class="btn" id="tv-btn" onclick="window.toggleTV()">📺 TV-läge</button>
-        <button class="btn" id="jsToggleBtn" onclick="window.toggleJSengine()">⚙️ JS PÅ</button>
+        <button class="btn" id="toggleListBtn">📺 Kanaler</button>
+        <button class="btn" id="pipBtn">⧉ PiP</button>
+        <button class="btn" id="fsBtn">⛶ Fullskärm</button>
+        <button class="btn" id="reloadBtn">↻ Ladda om</button>
+        <button class="btn" id="tvBtn">📺 TV-läge</button>
+        <button class="btn" id="jsToggleBtn">⚙️ JS PÅ</button>
       </div>
     </div>
     <div class="video-wrapper" id="vwrap">
-      <div class="error-msg"><h3>👈 Välj en kanal</h3><p style="font-size:13px; margin-top:12px;">✨ Dra för att ändra ordning • Äldre iPhone: native läge aktiverat</p></div>
+      <div class="error-msg"><h3>👈 Välj en kanal</h3><p style="font-size:13px; margin-top:12px;">✨ Dra för att ändra ordning • Om kanalen inte startar, tryck "JS AV"</p></div>
     </div>
   </main>
 </div>
 <script>
-  // ------------------------- DATASETS (Telewebion + iFilm) -------------------------
-  const subgroups = {
-    telewebion: [
-      { key: 'sarasari', label: '🌐 Sarasari', channels: [ { name: 'TV1', url: 'https://ncdn.telewebion.ir/tv1/live/playlist.m3u8', icon: '📡' }, { name: 'TV2', url: 'https://ncdn.telewebion.ir/tv2/live/playlist.m3u8', icon: '📡' }, { name: 'TV3', url: 'https://ncdn.telewebion.ir/tv3/live/playlist.m3u8', icon: '📡' }, { name: 'TV4', url: 'https://ncdn.telewebion.ir/tv4/live/playlist.m3u8', icon: '📡' }, { name: 'TAMASHA', url: 'https://ncdn.telewebion.ir/hdtest/live/playlist.m3u8', icon: '🎭' }, { name: 'POOYA', url: 'https://ncdn.telewebion.ir/pooya/live/playlist.m3u8', icon: '🧸' }, { name: 'IFILM', url: 'https://ncdn.telewebion.ir/ifilm/live/playlist.m3u8', icon: '🎬' }, { name: 'NAMAYESH', url: 'https://ncdn.telewebion.ir/namayesh/live/playlist.m3u8', icon: '🎪' }, { name: 'TEHRAN', url: 'https://ncdn.telewebion.ir/tehran/live/playlist.m3u8', icon: '🏙️' }, { name: 'MOSTANAD', url: 'https://ncdn.telewebion.ir/mostanad/live/playlist.m3u8', icon: '📽️' }, { name: 'QURAN', url: 'https://ncdn.telewebion.ir/quran/live/playlist.m3u8', icon: '📖' }, { name: 'AMOUZESH', url: 'https://ncdn.telewebion.ir/amouzesh/live/playlist.m3u8', icon: '📚' }, { name: 'SALAMAT', url: 'https://ncdn.telewebion.ir/salamat/live/playlist.m3u8', icon: '💚' }, { name: 'OFOGH', url: 'https://ncdn.telewebion.ir/ofogh/live/playlist.m3u8', icon: '🌟' }, { name: 'OMID', url: 'https://ncdn.telewebion.ir/omid/live/playlist.m3u8', icon: '⭐' }, { name: 'SEPEHR', url: 'https://ncdn.telewebion.ir/sepehr/live/playlist.m3u8', icon: '🕌' }, { name: 'IRINN', url: 'https://ncdn.telewebion.ir/irinn/live/playlist.m3u8', icon: '📰' }, { name: 'TV1+', url: 'https://ncdn.telewebion.ir/tv1plus/live/playlist.m3u8', icon: '🧑' }, { name: 'Nava', url: 'https://ncdn.telewebion.ir/nava/live/playlist.m3u8', icon: '🎵' }, { name: 'Nama', url: 'https://ncdn.telewebion.ir/nama/live/playlist.m3u8', icon: '🎼' }, ] },
-      { key: 'ostani', label: '🏙️ Ostani', channels: [ { name: 'URMIA', url: 'https://ncdn.telewebion.ir/azarbayjangharbi/live/playlist.m3u8', icon: '🌍' }, { name: 'SAHAND', url: 'https://ncdn.telewebion.ir/sahand/live/playlist.m3u8', icon: '⛰️' }, { name: 'ALBORZ', url: 'https://ncdn.telewebion.ir/alborz/live/playlist.m3u8', icon: '🏔️' }, { name: 'ESFAHAN', url: 'https://ncdn.telewebion.ir/esfahan/live/playlist.m3u8', icon: '🕌' }, { name: 'SABALAN', url: 'https://ncdn.telewebion.ir/sabalan/live/playlist.m3u8', icon: '🗻' }, { name: 'ILAM', url: 'https://ncdn.telewebion.ir/ilam/live/playlist.m3u8', icon: '🏞️' }, { name: 'BUSHEHR', url: 'https://ncdn.telewebion.ir/bushehr/live/playlist.m3u8', icon: '🌊' }, { name: 'JAHANBIN', url: 'https://ncdn.telewebion.ir/jahanbin/live/playlist.m3u8', icon: '🔭' }, { name: 'ABADAN', url: 'https://ncdn.telewebion.ir/abadan/live/playlist.m3u8', icon: '🏭' }, { name: 'KH.RAZAVI', url: 'https://ncdn.telewebion.ir/khorasanrazavi/live/playlist.m3u8', icon: '🕌' }, { name: 'ATRAK', url: 'https://ncdn.telewebion.ir/atrak/live/playlist.m3u8', icon: '🌊' }, { name: 'KHALIJFARS', url: 'https://ncdn.telewebion.ir/khalijefars/live/playlist.m3u8', icon: '🌊' }, { name: 'KHOZESTAN', url: 'https://ncdn.telewebion.ir/khoozestan/live/playlist.m3u8', icon: '🏜️' }, { name: 'ESHRAGH', url: 'https://ncdn.telewebion.ir/eshragh/live/playlist.m3u8', icon: '✨' }, { name: 'SEMNAN', url: 'https://ncdn.telewebion.ir/semnan/live/playlist.m3u8', icon: '🏜️' }, { name: 'HAMON', url: 'https://ncdn.telewebion.ir/hamoon/live/playlist.m3u8', icon: '🏞️' }, { name: 'FARS', url: 'https://ncdn.telewebion.ir/fars/live/playlist.m3u8', icon: '🏛️' }, { name: 'GHAZVIN', url: 'https://ncdn.telewebion.ir/qazvin/live/playlist.m3u8', icon: '🏛️' }, { name: 'NOOR', url: 'https://ncdn.telewebion.ir/noor/live/playlist.m3u8', icon: '💡' }, { name: 'LORESTAN', url: 'https://ncdn.telewebion.ir/aflak/live/playlist.m3u8', icon: '🏞️' }, { name: 'KERMAN', url: 'https://ncdn.telewebion.ir/kerman/live/playlist.m3u8', icon: '🏜️' }, { name: 'ZAGROS', url: 'https://ncdn.telewebion.ir/zagros/live/playlist.m3u8', icon: '⛰️' }, { name: 'DENA', url: 'https://ncdn.telewebion.ir/dena/live/playlist.m3u8', icon: '⛰️' }, { name: 'KISH', url: 'https://ncdn.telewebion.ir/kish/live/playlist.m3u8', icon: '🏝️' }, { name: 'GOLESTAN', url: 'https://ncdn.telewebion.ir/sabz/live/playlist.m3u8', icon: '🌳' }, { name: 'BARAN', url: 'https://ncdn.telewebion.ir/baran/live/playlist.m3u8', icon: '☔' }, { name: 'KORDESTAN', url: 'https://ncdn.telewebion.ir/kordestan/live/playlist.m3u8', icon: '🏔️' }, { name: 'YAZD', url: 'https://ncdn.telewebion.ir/taban/live/playlist.m3u8', icon: '🏜️' }, { name: 'TABARESTAN', url: 'https://ncdn.telewebion.ir/tabarestan/live/playlist.m3u8', icon: '🌳' }, { name: 'AFTAB', url: 'https://ncdn.telewebion.ir/aftab/live/playlist.m3u8', icon: '☀️' }, { name: 'MAHABAD', url: 'https://ncdn.telewebion.ir/mahabad/live/playlist.m3u8', icon: '🏞️' }, { name: 'HAMADAN', url: 'https://ncdn.telewebion.ir/sina/live/playlist.m3u8', icon: '🏛️' }, { name: 'KHAVARAN', url: 'https://ncdn.telewebion.ir/khavaran/live/playlist.m3u8', icon: '🌅' }, ] },
-      { key: 'ekhtesasi', label: '🎯 Ekhtesasi', channels: [ { name: 'HABIB', url: 'https://ncdn.telewebion.ir/habib/live/playlist.m3u8', icon: '🤝' }, { name: 'Golkhane', url: 'https://ncdn.telewebion.ir/golkhane/live/playlist.m3u8', icon: '🌐' }, { name: 'Labbayk', url: 'https://ncdn.telewebion.ir/labbayk/live/playlist.m3u8', icon: '🌐' }, { name: 'Maddahi', url: 'https://ncdn.telewebion.ir/tekyemadahi/live/playlist.m3u8', icon: '🌐' }, { name: 'Energi', url: 'https://ncdn.telewebion.ir/baenergy/live/playlist.m3u8', icon: '🎬' }, { name: 'Velayat', url: 'https://ncdn.telewebion.ir/velayat/live/playlist.m3u8', icon: '📖' }, { name: 'Karoon', url: 'https://ncdn.telewebion.ir/karoon/live/playlist.m3u8', icon: '🎨' }, { name: 'Palestine', url: 'https://ncdn.telewebion.ir/palestine/live/playlist.m3u8', icon: '📅' }, { name: 'Nesfejahan', url: 'https://ncdn.telewebion.ir/nesfejahan/live/playlist.m3u8', icon: '🌿' }, ] },
-      { key: 'radio', label: '📻 Radio', channels: [ { name: 'Radio Ava', url: 'https://ncdn.telewebion.ir/radioava/live/playlist.m3u8', icon: '🕌' }, { name: 'Radio Namayesh', url: 'https://ncdn.telewebion.ir/radionamayesh/live/playlist.m3u8', icon: '🎵' }, { name: 'Radio Tehran', url: 'https://ncdn.telewebion.ir/radiotehran/live/playlist.m3u8', icon: '👥' }, { name: 'Radio Payam', url: 'https://ncdn.telewebion.ir/radiopayam/live/playlist.m3u8', icon: '🛍️' }, { name: 'Radio Salamat', url: 'https://ncdn.telewebion.ir/radiosalamat/live/playlist.m3u8', icon: '🛍️' }, { name: 'Radio Tartil', url: 'https://ncdn.telewebion.ir/radiotartil/live/playlist.m3u8', icon: '🛍️' }, { name: 'Radio Iran', url: 'https://ncdn.telewebion.ir/radioiran/live/playlist.m3u8', icon: '🛍️' }, ] }
-    ]
-  };
-  const ifilmRaw = [ { name: 'iFilm Farsi', url: 'https://live.presstv.ir/hls/ifilmfa.m3u8', color: 'blue' }, { name: 'iFilm Dari', url: 'https://live.presstv.ir/hls/ifilm2.m3u8', color: 'blue' }, { name: 'iFilm English', url: 'https://live.presstv.ir/hls/ifilmen.m3u8', color: 'blue' }, { name: 'iFilm Arabic', url: 'https://live.presstv.ir/hls/ifilmar.m3u8', color: 'blue' } ];
+// --------------------------------------------------------------
+//  TELAWEBION + iFILM DATA (ES5 compatible, ingen object spread)
+// --------------------------------------------------------------
+var subgroupsData = {
+  telewebion: [
+    { key: 'sarasari', label: '🌐 Sarasari', channels: [
+      { name: 'TV1', url: 'https://ncdn.telewebion.ir/tv1/live/playlist.m3u8', icon: '📡' },
+      { name: 'TV2', url: 'https://ncdn.telewebion.ir/tv2/live/playlist.m3u8', icon: '📡' },
+      { name: 'TV3', url: 'https://ncdn.telewebion.ir/tv3/live/playlist.m3u8', icon: '📡' },
+      { name: 'TV4', url: 'https://ncdn.telewebion.ir/tv4/live/playlist.m3u8', icon: '📡' },
+      { name: 'TAMASHA', url: 'https://ncdn.telewebion.ir/hdtest/live/playlist.m3u8', icon: '🎭' },
+      { name: 'POOYA', url: 'https://ncdn.telewebion.ir/pooya/live/playlist.m3u8', icon: '🧸' },
+      { name: 'IFILM', url: 'https://ncdn.telewebion.ir/ifilm/live/playlist.m3u8', icon: '🎬' },
+      { name: 'NAMAYESH', url: 'https://ncdn.telewebion.ir/namayesh/live/playlist.m3u8', icon: '🎪' },
+      { name: 'TEHRAN', url: 'https://ncdn.telewebion.ir/tehran/live/playlist.m3u8', icon: '🏙️' },
+      { name: 'MOSTANAD', url: 'https://ncdn.telewebion.ir/mostanad/live/playlist.m3u8', icon: '📽️' },
+      { name: 'QURAN', url: 'https://ncdn.telewebion.ir/quran/live/playlist.m3u8', icon: '📖' },
+      { name: 'AMOUZESH', url: 'https://ncdn.telewebion.ir/amouzesh/live/playlist.m3u8', icon: '📚' },
+      { name: 'SALAMAT', url: 'https://ncdn.telewebion.ir/salamat/live/playlist.m3u8', icon: '💚' },
+      { name: 'OFOGH', url: 'https://ncdn.telewebion.ir/ofogh/live/playlist.m3u8', icon: '🌟' },
+      { name: 'OMID', url: 'https://ncdn.telewebion.ir/omid/live/playlist.m3u8', icon: '⭐' },
+      { name: 'SEPEHR', url: 'https://ncdn.telewebion.ir/sepehr/live/playlist.m3u8', icon: '🕌' },
+      { name: 'IRINN', url: 'https://ncdn.telewebion.ir/irinn/live/playlist.m3u8', icon: '📰' },
+      { name: 'TV1+', url: 'https://ncdn.telewebion.ir/tv1plus/live/playlist.m3u8', icon: '🧑' },
+      { name: 'Nava', url: 'https://ncdn.telewebion.ir/nava/live/playlist.m3u8', icon: '🎵' },
+      { name: 'Nama', url: 'https://ncdn.telewebion.ir/nama/live/playlist.m3u8', icon: '🎼' }
+    ] },
+    { key: 'ostani', label: '🏙️ Ostani', channels: [
+      { name: 'URMIA', url: 'https://ncdn.telewebion.ir/azarbayjangharbi/live/playlist.m3u8', icon: '🌍' },
+      { name: 'SAHAND', url: 'https://ncdn.telewebion.ir/sahand/live/playlist.m3u8', icon: '⛰️' },
+      { name: 'ALBORZ', url: 'https://ncdn.telewebion.ir/alborz/live/playlist.m3u8', icon: '🏔️' },
+      { name: 'ESFAHAN', url: 'https://ncdn.telewebion.ir/esfahan/live/playlist.m3u8', icon: '🕌' },
+      { name: 'SABALAN', url: 'https://ncdn.telewebion.ir/sabalan/live/playlist.m3u8', icon: '🗻' },
+      { name: 'ILAM', url: 'https://ncdn.telewebion.ir/ilam/live/playlist.m3u8', icon: '🏞️' },
+      { name: 'BUSHEHR', url: 'https://ncdn.telewebion.ir/bushehr/live/playlist.m3u8', icon: '🌊' },
+      { name: 'JAHANBIN', url: 'https://ncdn.telewebion.ir/jahanbin/live/playlist.m3u8', icon: '🔭' },
+      { name: 'ABADAN', url: 'https://ncdn.telewebion.ir/abadan/live/playlist.m3u8', icon: '🏭' },
+      { name: 'KH.RAZAVI', url: 'https://ncdn.telewebion.ir/khorasanrazavi/live/playlist.m3u8', icon: '🕌' },
+      { name: 'ATRAK', url: 'https://ncdn.telewebion.ir/atrak/live/playlist.m3u8', icon: '🌊' },
+      { name: 'KHALIJFARS', url: 'https://ncdn.telewebion.ir/khalijefars/live/playlist.m3u8', icon: '🌊' },
+      { name: 'KHOZESTAN', url: 'https://ncdn.telewebion.ir/khoozestan/live/playlist.m3u8', icon: '🏜️' },
+      { name: 'ESHRAGH', url: 'https://ncdn.telewebion.ir/eshragh/live/playlist.m3u8', icon: '✨' },
+      { name: 'SEMNAN', url: 'https://ncdn.telewebion.ir/semnan/live/playlist.m3u8', icon: '🏜️' },
+      { name: 'HAMON', url: 'https://ncdn.telewebion.ir/hamoon/live/playlist.m3u8', icon: '🏞️' },
+      { name: 'FARS', url: 'https://ncdn.telewebion.ir/fars/live/playlist.m3u8', icon: '🏛️' },
+      { name: 'GHAZVIN', url: 'https://ncdn.telewebion.ir/qazvin/live/playlist.m3u8', icon: '🏛️' },
+      { name: 'NOOR', url: 'https://ncdn.telewebion.ir/noor/live/playlist.m3u8', icon: '💡' },
+      { name: 'LORESTAN', url: 'https://ncdn.telewebion.ir/aflak/live/playlist.m3u8', icon: '🏞️' },
+      { name: 'KERMAN', url: 'https://ncdn.telewebion.ir/kerman/live/playlist.m3u8', icon: '🏜️' },
+      { name: 'ZAGROS', url: 'https://ncdn.telewebion.ir/zagros/live/playlist.m3u8', icon: '⛰️' },
+      { name: 'DENA', url: 'https://ncdn.telewebion.ir/dena/live/playlist.m3u8', icon: '⛰️' },
+      { name: 'KISH', url: 'https://ncdn.telewebion.ir/kish/live/playlist.m3u8', icon: '🏝️' },
+      { name: 'GOLESTAN', url: 'https://ncdn.telewebion.ir/sabz/live/playlist.m3u8', icon: '🌳' },
+      { name: 'BARAN', url: 'https://ncdn.telewebion.ir/baran/live/playlist.m3u8', icon: '☔' },
+      { name: 'KORDESTAN', url: 'https://ncdn.telewebion.ir/kordestan/live/playlist.m3u8', icon: '🏔️' },
+      { name: 'YAZD', url: 'https://ncdn.telewebion.ir/taban/live/playlist.m3u8', icon: '🏜️' },
+      { name: 'TABARESTAN', url: 'https://ncdn.telewebion.ir/tabarestan/live/playlist.m3u8', icon: '🌳' },
+      { name: 'AFTAB', url: 'https://ncdn.telewebion.ir/aftab/live/playlist.m3u8', icon: '☀️' },
+      { name: 'MAHABAD', url: 'https://ncdn.telewebion.ir/mahabad/live/playlist.m3u8', icon: '🏞️' },
+      { name: 'HAMADAN', url: 'https://ncdn.telewebion.ir/sina/live/playlist.m3u8', icon: '🏛️' },
+      { name: 'KHAVARAN', url: 'https://ncdn.telewebion.ir/khavaran/live/playlist.m3u8', icon: '🌅' }
+    ] },
+    { key: 'ekhtesasi', label: '🎯 Ekhtesasi', channels: [
+      { name: 'HABIB', url: 'https://ncdn.telewebion.ir/habib/live/playlist.m3u8', icon: '🤝' },
+      { name: 'Golkhane', url: 'https://ncdn.telewebion.ir/golkhane/live/playlist.m3u8', icon: '🌐' },
+      { name: 'Labbayk', url: 'https://ncdn.telewebion.ir/labbayk/live/playlist.m3u8', icon: '🌐' },
+      { name: 'Maddahi', url: 'https://ncdn.telewebion.ir/tekyemadahi/live/playlist.m3u8', icon: '🌐' },
+      { name: 'Energi', url: 'https://ncdn.telewebion.ir/baenergy/live/playlist.m3u8', icon: '🎬' },
+      { name: 'Velayat', url: 'https://ncdn.telewebion.ir/velayat/live/playlist.m3u8', icon: '📖' },
+      { name: 'Karoon', url: 'https://ncdn.telewebion.ir/karoon/live/playlist.m3u8', icon: '🎨' },
+      { name: 'Palestine', url: 'https://ncdn.telewebion.ir/palestine/live/playlist.m3u8', icon: '📅' },
+      { name: 'Nesfejahan', url: 'https://ncdn.telewebion.ir/nesfejahan/live/playlist.m3u8', icon: '🌿' }
+    ] },
+    { key: 'radio', label: '📻 Radio', channels: [
+      { name: 'Radio Ava', url: 'https://ncdn.telewebion.ir/radioava/live/playlist.m3u8', icon: '🕌' },
+      { name: 'Radio Namayesh', url: 'https://ncdn.telewebion.ir/radionamayesh/live/playlist.m3u8', icon: '🎵' },
+      { name: 'Radio Tehran', url: 'https://ncdn.telewebion.ir/radiotehran/live/playlist.m3u8', icon: '👥' },
+      { name: 'Radio Payam', url: 'https://ncdn.telewebion.ir/radiopayam/live/playlist.m3u8', icon: '🛍️' },
+      { name: 'Radio Salamat', url: 'https://ncdn.telewebion.ir/radiosalamat/live/playlist.m3u8', icon: '🛍️' },
+      { name: 'Radio Tartil', url: 'https://ncdn.telewebion.ir/radiotartil/live/playlist.m3u8', icon: '🛍️' },
+      { name: 'Radio Iran', url: 'https://ncdn.telewebion.ir/radioiran/live/playlist.m3u8', icon: '🛍️' }
+    ] }
+  ]
+};
+var ifilmRaw = [
+  { name: 'iFilm Farsi', url: 'https://live.presstv.ir/hls/ifilmfa.m3u8', color: 'blue', icon: '🎬' },
+  { name: 'iFilm Dari', url: 'https://live.presstv.ir/hls/ifilm2.m3u8', color: 'blue', icon: '🎬' },
+  { name: 'iFilm English', url: 'https://live.presstv.ir/hls/ifilmen.m3u8', color: 'blue', icon: '🎬' },
+  { name: 'iFilm Arabic', url: 'https://live.presstv.ir/hls/ifilmar.m3u8', color: 'blue', icon: '🎬' }
+];
 
-  // ----- Helper: detect old iOS (iPhone 5s / iOS 12 or older)
-  function isOldIOS() {
-    const ua = navigator.userAgent || '';
-    const isIPhone = /iPhone|iPad|iPod/.test(ua);
-    if (!isIPhone) return false;
-    const match = ua.match(/OS (\d+)_/);
-    if (match && match[1]) {
-      const majorVer = parseInt(match[1], 10);
-      return majorVer <= 12;   // iOS 12 and below are problematic for HLS.js heavy usage
+// ------------------- HELPER (ES5) -------------------
+function cloneChannel(ch, subgroupKey) {
+  var copy = { name: ch.name, url: ch.url, icon: ch.icon };
+  if (ch.color) copy.color = ch.color;
+  copy.subgroup = subgroupKey;
+  return copy;
+}
+
+function buildTelewebionFlat() {
+  var flat = [];
+  for (var i = 0; i < subgroupsData.telewebion.length; i++) {
+    var sg = subgroupsData.telewebion[i];
+    for (var j = 0; j < sg.channels.length; j++) {
+      flat.push(cloneChannel(sg.channels[j], sg.key));
     }
-    // fallback: detect low memory or older device (iPhone5s small screen)
-    return (screen.width <= 640 && screen.height <= 1136) || (window.innerWidth <= 375 && window.innerHeight <= 667);
   }
+  return flat;
+}
 
-  // ----- Global state -----
-  let hlsInst = null, dashInst = null, cur = null, favs = [], jsEnabled = true, tvMode = false;
-  let retryCount = 0, retryTimer = null, keepAliveTimer = null, stallTimer = null, lastTime = -1, lastTimeStamp = Date.now();
-  let curFilter = null, curSubgroup = null, dragSource = null;
-
-  // Ordering helpers
-  function loadOrder(cat) { try { const o = localStorage.getItem(`order_${cat}`); return o ? JSON.parse(o) : null; } catch(e){ return null; } }
-  function saveOrder(cat, arr) { localStorage.setItem(`order_${cat}`, JSON.stringify(arr.map(c=>c.url))); }
-  function applyStoredOrderFlat(flat, catKey) { const stored = loadOrder(catKey); if(!stored) return flat; const map = new Map(flat.map(c=>[c.url, c])); const ordered = []; for(let url of stored) if(map.has(url)) ordered.push(map.get(url)); for(let c of flat) if(!ordered.includes(c)) ordered.push(c); return ordered; }
-  function buildTelewebionFlat() { const flat = []; for (const sg of subgroups.telewebion) for (const ch of sg.channels) flat.push({...ch, subgroup: sg.key}); return flat; }
-  let telewebionFlat = applyStoredOrderFlat(buildTelewebionFlat(), 'telewebion');
-  let ifilmOrdered = applyStoredOrderFlat([...ifilmRaw], 'ifilm');
-  const channels = { telewebion: telewebionFlat, ifilm: ifilmOrdered };
-  function reorderCategory(catKey, newArr) { channels[catKey] = newArr; saveOrder(catKey, newArr); }
-
-  function destroyPlayers() {
-    if (stallTimer) clearInterval(stallTimer);
-    if (keepAliveTimer) clearInterval(keepAliveTimer);
-    if (retryTimer) clearTimeout(retryTimer);
-    if (hlsInst) { try { hlsInst.destroy(); } catch(e){} hlsInst = null; }
-    if (dashInst) { try { dashInst.reset(); } catch(e){} dashInst = null; }
-    retryCount = 0;
+function loadOrder(cat) {
+  try { var o = localStorage.getItem('order_' + cat); return o ? JSON.parse(o) : null; } catch(e){ return null; }
+}
+function saveOrder(cat, arr) {
+  var urls = [];
+  for (var i=0;i<arr.length;i++) urls.push(arr[i].url);
+  localStorage.setItem('order_' + cat, JSON.stringify(urls));
+}
+function applyStoredOrder(flat, catKey) {
+  var stored = loadOrder(catKey);
+  if (!stored || !stored.length) return flat;
+  var map = {};
+  for (var i=0;i<flat.length;i++) map[flat[i].url] = flat[i];
+  var ordered = [];
+  for (var si=0;si<stored.length;si++) {
+    var u = stored[si];
+    if (map[u]) ordered.push(map[u]);
   }
+  for (var fi=0;fi<flat.length;fi++) {
+    if (ordered.indexOf(flat[fi]) === -1) ordered.push(flat[fi]);
+  }
+  return ordered;
+}
 
-  function reload() { if (cur) play(cur.url, cur.name, cur.referer); }
-  function pip() { const v=document.getElementById('vplayer'); if(v && document.pictureInPictureEnabled) { document.pictureInPictureElement ? document.exitPictureInPicture() : v.requestPictureInPicture().catch(()=>{}); } }
-  function fs() { const w=document.getElementById('vwrap'); document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen().catch(()=>{}); }
-  function toggleTV() { tvMode = !tvMode; document.body.classList.toggle('tv-mode', tvMode); document.getElementById('tv-btn').textContent = tvMode ? '🖥️ Normal' : '📺 TV-läge'; if(tvMode && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{}); else if(document.fullscreenElement) document.exitFullscreen(); localStorage.setItem('xomtv', tvMode ? '1' : ''); if (cur) reload(); }
-  function toggleList() { document.getElementById('channel-list').classList.toggle('show'); }
-  function fav(url, name) { const i = favs.findIndex(f=>f.url===url); i > -1 ? favs.splice(i,1) : favs.push({url,name}); localStorage.setItem('xomfavs', JSON.stringify(favs)); render(curFilter, curSubgroup); }
+var telewebionFlat = buildTelewebionFlat();
+var ifilmOrdered = applyStoredOrder(ifilmRaw.slice(), 'ifilm');
+telewebionFlat = applyStoredOrder(telewebionFlat, 'telewebion');
+var channels = { telewebion: telewebionFlat, ifilm: ifilmOrdered };
 
-  // ----- Native fallback (no HLS.js) robust version -----
-  function playNative(url, name) {
-    const wrap = document.getElementById('vwrap');
-    let vid = document.getElementById('vplayer');
-    if (!vid) {
-      wrap.innerHTML = '<video id="vplayer" controls autoplay playsinline style="width:100%;height:100%;"></video>';
-      vid = document.getElementById('vplayer');
+// ------------------- GLOBAL STATE -------------------
+var hlsInst = null;
+var cur = null;
+var favs = [];
+var jsEnabled = true;
+var tvMode = false;
+var retryTimer = null;
+var keepAliveTimer = null;
+var stallTimer = null;
+var lastTime = -1, lastTimeStamp = Date.now();
+var curFilter = null, curSubgroup = null;
+var dragSource = null;
+
+// ------------------- DETECT OLD iOS -------------------
+function isOldIOS() {
+  var ua = navigator.userAgent || '';
+  var isIPhone = /iPhone|iPad|iPod/.test(ua);
+  if (!isIPhone) return false;
+  var match = ua.match(/OS (\d+)_/);
+  if (match && match[1]) {
+    var major = parseInt(match[1], 10);
+    return major <= 12;
+  }
+  return (screen.width <= 640 && screen.height <= 1136);
+}
+
+// ------------------- RENDER (ES5) -------------------
+function escapeHtml(str) {
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
+
+function render(filter, sgFilter) {
+  curFilter = filter; curSubgroup = sgFilter;
+  var html = '';
+  if (filter === 'telewebion' || (!filter)) {
+    var catArr = channels.telewebion;
+    var sgMap = {};
+    for (var idx=0; idx<subgroupsData.telewebion.length; idx++) {
+      var sgk = subgroupsData.telewebion[idx].key;
+      sgMap[sgk] = { label: subgroupsData.telewebion[idx].label, items: [] };
     }
-    vid.src = url;
-    vid.removeEventListener('error', nativeErrorHandler);
-    const nativeErrorHandler = () => { if(cur && cur.url === url) scheduleRetry(url, name); };
-    vid.addEventListener('error', nativeErrorHandler, { once: true });
-    vid.play().catch(e => { scheduleRetry(url, name); });
-    startStallWatcher(vid);
-    startKeepAlive();
-  }
-
-  function scheduleRetry(url, name) {
-    if (retryTimer) clearTimeout(retryTimer);
-    const delay = Math.min(1000 * Math.pow(1.5, retryCount), 15000);
-    retryCount++;
-    retryTimer = setTimeout(() => { if(cur && cur.url === url) playInternal(url, name, false); }, delay);
-  }
-
-  function startStallWatcher(vid) {
-    clearStallWatcher();
-    lastTime = -1; lastTimeStamp = Date.now();
-    stallTimer = setInterval(() => {
-      if (!vid || vid.paused || vid.ended || vid.readyState < 2) return;
-      const now = Date.now(), t = vid.currentTime;
-      if (t === lastTime && (now - lastTimeStamp) >= 3500) {
-        try { const ranges = vid.buffered; if (ranges.length) { const end = ranges.end(ranges.length-1); if (end - t > 0.5) vid.currentTime = end - 0.3; } } catch(e) {}
-        if (hlsInst) try { hlsInst.startLoad(); } catch(e) {}
-        vid.play().catch(()=>{});
-        if ((now - lastTimeStamp) >= 12000) softReconnect();
-      } else { lastTime = t; lastTimeStamp = now; }
-    }, 1000);
-  }
-  function clearStallWatcher() { if (stallTimer) { clearInterval(stallTimer); stallTimer = null; } }
-  function startKeepAlive() { stopKeepAlive(); keepAliveTimer = setInterval(() => { const vid = document.getElementById('vplayer'); if(vid && !vid.paused && vid.readyState === 0 && cur) softReconnect(); }, 6000); }
-  function stopKeepAlive() { if(keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; } }
-  function softReconnect() { if (!cur) return; if (hlsInst && jsEnabled) { try { hlsInst.stopLoad(); setTimeout(()=>{ if(hlsInst) hlsInst.loadSource(cur.url); }, 600); } catch(e){} } else { playNative(cur.url, cur.name); } }
-
-  function play(url, name, referer) {
-    if (window.innerWidth <= 768) document.getElementById('channel-list').classList.remove('show');
-    cur = { url, name, referer: referer || '' };
-    retryCount = 0;
-    document.getElementById('ch-title').textContent = name;
-    destroyPlayers();
-    const wrap = document.getElementById('vwrap');
-    wrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><div class="spinner"></div><span style="margin-left:12px;">Laddar ${name}…</span></div>`;
-    render(curFilter, curSubgroup);
-    setTimeout(() => playInternal(url, name, false), 30);
-  }
-
-  function playInternal(url, name, isRetry = false) {
-    const wrap = document.getElementById('vwrap');
-    if (!wrap) return;
-    // JS off mode: ALWAYS native
-    if (!jsEnabled) {
-      playNative(url, name);
-      return;
+    for (var i=0; i<catArr.length; i++) {
+      var ch = catArr[i];
+      var sgKey = ch.subgroup || 'sarasari';
+      if (sgMap[sgKey]) sgMap[sgKey].items.push({ch: ch, idx: i});
     }
-    let vid = document.getElementById('vplayer');
-    if (!vid) {
-      wrap.innerHTML = '<video id="vplayer" controls autoplay playsinline style="width:100%;height:100%;"></video>';
-      vid = document.getElementById('vplayer');
-    }
-    if (Hls.isSupported()) {
-      if (hlsInst) try { hlsInst.destroy(); } catch(e){} hlsInst = null;
-      const config = {
-        enableWorker: false,     // better for older devices
-        maxBufferLength: 45,
-        maxMaxBufferLength: 120,
-        liveSyncDurationCount: 5,
-        fragLoadingMaxRetry: 8,
-        manifestLoadingMaxRetry: 8,
-        startLevel: -1,
-        xhrSetup(xhr) {
-          const ua = document.getElementById('ua-select').value;
-          if (ua) try { xhr.setRequestHeader('User-Agent', ua); } catch(e){}
+    if (sgFilter) {
+      var sgObj = sgMap[sgFilter];
+      if (sgObj && sgObj.items.length) {
+        html += '<div class="category-title">' + sgObj.label + ' (' + sgObj.items.length + ')</div>';
+        for (var it=0; it<sgObj.items.length; it++) {
+          html += makeChannelItem(sgObj.items[it].ch, sgObj.items[it].idx, 'telewebion');
         }
-      };
-      hlsInst = new Hls(config);
-      hlsInst.loadSource(url);
-      hlsInst.attachMedia(vid);
-      hlsInst.on(Hls.Events.MANIFEST_PARSED, () => { vid.play().catch(e=>{}); startStallWatcher(vid); startKeepAlive(); retryCount=0; });
-      hlsInst.on(Hls.Events.ERROR, (_, data) => {
-        if (data.fatal) {
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR || data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-            scheduleRetry(url, name);
-          } else scheduleRetry(url, name);
-        } else {
-          if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) try { hlsInst.startLoad(); vid.play().catch(()=>{}); } catch(e) {}
-        }
-      });
-    } else if (vid.canPlayType('application/vnd.apple.mpegurl')) {
-      playNative(url, name);
+      }
     } else {
-      wrap.innerHTML = `<div class="error-msg"><h3>⚠️ Stöd saknas</h3><button class="btn" onclick="window.toggleJSengine()">🔘 Prova JS AV</button></div>`;
-    }
-  }
-
-  function toggleJSengine() {
-    jsEnabled = !jsEnabled;
-    const btn = document.getElementById('jsToggleBtn');
-    btn.textContent = jsEnabled ? '⚙️ JS PÅ' : '⚠️ JS AV';
-    btn.classList.toggle('js-toggle-off', !jsEnabled);
-    localStorage.setItem('xom_js_toggle', jsEnabled ? 'on' : 'off');
-    if (cur) play(cur.url, cur.name, cur.referer);
-    else document.getElementById('vwrap').innerHTML = `<div class="error-msg"><h3>🔘 JS är nu ${jsEnabled ? 'AKTIVERAD' : 'AVSTÄNGD'}</h3><p>Välj en kanal igen.</p></div>`;
-  }
-
-  // ---- Rendering & Drag / Drop ----
-  function render(filter, sgFilter) {
-    curFilter = filter; curSubgroup = sgFilter;
-    const catNames = { telewebion:'📡 Telewebion', ifilm:'🎬 iFilm' };
-    const chRow = (ch, idx, catKey) => {
-      const star = favs.some(f=>f.url===ch.url) ? '⭐' : '☆';
-      const activeClass = (cur && cur.url===ch.url) ? 'active' : '';
-      return `<div class="channel-item ${ch.color||''} ${activeClass}" draggable="true" data-url="${escapeHtml(ch.url)}" data-name="${escapeHtml(ch.name)}" data-cat="${catKey}" data-idx="${idx}">
-        <span>${ch.icon ? ch.icon + ' ' : ''}${ch.name}</span>
-        <button class="fav-btn" onclick="event.stopPropagation();window.fav('${escapeHtml(ch.url)}','${escapeHtml(ch.name)}')">${star}</button>
-      </div>`;
-    };
-    let html = '';
-    if (filter === 'telewebion' || (!filter)) {
-      const catArr = channels.telewebion;
-      const sgMap = new Map();
-      for (const sg of subgroups.telewebion) sgMap.set(sg.key, { label: sg.label, items: [] });
-      catArr.forEach((ch, idx) => { const sgKey = ch.subgroup || 'sarasari'; if (sgMap.has(sgKey)) sgMap.get(sgKey).items.push({ch, idx}); });
-      if (sgFilter) {
-        const sg = sgMap.get(sgFilter);
-        if (sg && sg.items.length) { html += `<div class="category-title">${sg.label} (${sg.items.length})</div>`; html += sg.items.map(({ch, idx}) => chRow(ch, idx, 'telewebion')).join(''); }
-      } else {
-        html += `<div class="category-title">${catNames.telewebion} (${catArr.length})</div>`;
-        for (const [sgKey, sg] of sgMap) { if (sg.items.length){ html += `<div class="subgroup-title">${sg.label}</div>`; html += sg.items.map(({ch, idx}) => chRow(ch, idx, 'telewebion')).join(''); }}
+      html += '<div class="category-title">📡 Telewebion (' + catArr.length + ')</div>';
+      for (var sg in sgMap) {
+        if (sgMap[sg].items.length > 0) {
+          html += '<div class="subgroup-title">' + sgMap[sg].label + '</div>';
+          for (var it2=0; it2<sgMap[sg].items.length; it2++) {
+            html += makeChannelItem(sgMap[sg].items[it2].ch, sgMap[sg].items[it2].idx, 'telewebion');
+          }
+        }
       }
     }
-    if ((filter === 'ifilm' || (!filter)) && !sgFilter) {
-      const catArr = channels.ifilm;
-      html += `<div class="category-title">${catNames.ifilm} (${catArr.length})</div>`;
-      html += catArr.map((ch, i) => chRow(ch, i, 'ifilm')).join('');
-    }
-    document.getElementById('ch-container').innerHTML = html;
-    attachDragListeners(); attachChannelEvents();
   }
-  function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-  function attachChannelEvents() { document.querySelectorAll('.channel-item').forEach(el => { el.addEventListener('click', (ev) => { if(ev.target.classList.contains('fav-btn')) return; window.play(el.dataset.url, el.dataset.name, el.dataset.referer || ''); }); }); }
-  function attachDragListeners() { document.querySelectorAll('.channel-item[draggable="true"]').forEach(el => { el.addEventListener('dragstart', dragStart); el.addEventListener('dragend', dragEnd); el.addEventListener('dragover', dragOver); el.addEventListener('dragleave', dragLeave); el.addEventListener('drop', drop); }); }
-  function dragStart(e) { dragSource = e.target.closest('.channel-item'); if(dragSource) { e.dataTransfer.setData('text/plain', 'drag'); e.dataTransfer.effectAllowed = 'move'; dragSource.style.opacity = '0.5'; } }
-  function dragEnd() { if(dragSource) dragSource.style.opacity = ''; document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('drag-over')); dragSource = null; }
-  function dragOver(e) { e.preventDefault(); const target = e.target.closest('.channel-item'); if(target && target !== dragSource) target.classList.add('drag-over'); }
-  function dragLeave(e) { const target = e.target.closest('.channel-item'); if(target) target.classList.remove('drag-over'); }
-  function drop(e) { e.preventDefault(); const targetItem = e.target.closest('.channel-item'); if(!dragSource || !targetItem || dragSource === targetItem) { cleanupDrag(); return; } const srcCat = dragSource.dataset.cat, tgtCat = targetItem.dataset.cat; if(srcCat !== tgtCat) { cleanupDrag(); return; } const srcIdx = parseInt(dragSource.dataset.idx), tgtIdx = parseInt(targetItem.dataset.idx); if(isNaN(srcIdx) || isNaN(tgtIdx)) { cleanupDrag(); return; } let arr = [...channels[srcCat]]; const [moved] = arr.splice(srcIdx, 1); arr.splice(tgtIdx, 0, moved); reorderCategory(srcCat, arr); render(curFilter, curSubgroup); cleanupDrag(); }
-  function cleanupDrag() { if(dragSource) dragSource.style.opacity = ''; document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('drag-over')); dragSource = null; }
-
-  function showAll(btn) { document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); curFilter = null; curSubgroup = null; render(null, null); }
-  function filterCat(btn, cat) { document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); curSubgroup = null; render(cat, null); }
-  function filterSubgroup(btn, sgKey) { document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render('telewebion', sgKey); }
-
-  // ----- initial prefs + old iOS tweak -----
-  (function init() {
-    try { favs = JSON.parse(localStorage.getItem('xomfavs') || '[]'); } catch(e){ favs=[]; }
-    let savedJS = localStorage.getItem('xom_js_toggle');
-    const oldDevice = isOldIOS();
-    if (oldDevice) {
-      document.getElementById('compat-note').innerHTML = '⚙️ Äldre enhet: Native läge aktiverat (JS AV)';
-      if (savedJS !== 'off') savedJS = 'off';
-      localStorage.setItem('xom_js_toggle', 'off');
-      jsEnabled = false;
-    } else {
-      jsEnabled = savedJS !== 'off';
+  if ((filter === 'ifilm' || (!filter)) && !sgFilter) {
+    var ifArr = channels.ifilm;
+    html += '<div class="category-title">🎬 iFilm (' + ifArr.length + ')</div>';
+    for (var ii=0; ii<ifArr.length; ii++) {
+      html += makeChannelItem(ifArr[ii], ii, 'ifilm');
     }
-    const btn = document.getElementById('jsToggleBtn');
-    btn.textContent = jsEnabled ? '⚙️ JS PÅ' : '⚠️ JS AV';
-    btn.classList.toggle('js-toggle-off', !jsEnabled);
-    const ua = navigator.userAgent;
-    const detectedTV = /SmartTV|webOS|SMART-TV|HbbTV|NetCast|BRAVIA|Tizen/i.test(ua) || (window.innerWidth >= 1920 && !('ontouchstart' in window) && navigator.maxTouchPoints === 0);
-    if (detectedTV || localStorage.getItem('xomtv') === '1') { document.body.classList.add('tv-mode'); tvMode = true; document.getElementById('tv-btn').textContent = '🖥️ Normal'; }
-    render(null, null);
-    window.play = play; window.reload = reload; window.pip = pip; window.fs = fs; window.toggleTV = toggleTV; window.toggleJSengine = toggleJSengine; window.showAll = showAll; window.filterCat = filterCat; window.filterSubgroup = filterSubgroup; window.toggleList = toggleList; window.fav = fav;
-  })();
+  }
+  document.getElementById('ch-container').innerHTML = html;
+  attachDragListeners();
+  attachChannelEvents();
+}
+
+function makeChannelItem(ch, idx, catKey) {
+  var star = favs.some(function(f) { return f.url === ch.url; }) ? '⭐' : '☆';
+  var activeClass = (cur && cur.url === ch.url) ? 'active' : '';
+  var colorCls = ch.color || '';
+  var iconSpan = ch.icon ? ch.icon + ' ' : '';
+  return '<div class="channel-item ' + colorCls + ' ' + activeClass + '" draggable="true" data-url="' + escapeHtml(ch.url) + '" data-name="' + escapeHtml(ch.name) + '" data-cat="' + catKey + '" data-idx="' + idx + '">' +
+    '<span>' + iconSpan + ch.name + '</span>' +
+    '<button class="fav-btn" data-url="' + escapeHtml(ch.url) + '" data-name="' + escapeHtml(ch.name) + '">' + star + '</button>' +
+    '</div>';
+}
+
+function attachChannelEvents() {
+  var items = document.querySelectorAll('.channel-item');
+  for (var i=0; i<items.length; i++) {
+    var el = items[i];
+    el.addEventListener('click', function(ev) {
+      if (ev.target.classList && ev.target.classList.contains('fav-btn')) return;
+      var url = this.getAttribute('data-url');
+      var name = this.getAttribute('data-name');
+      play(url, name, '');
+    });
+    var favBtn = el.querySelector('.fav-btn');
+    if (favBtn) {
+      favBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var url = this.getAttribute('data-url');
+        var name = this.getAttribute('data-name');
+        fav(url, name);
+      });
+    }
+  }
+}
+
+// Drag and drop (ES5)
+function attachDragListeners() {
+  var draggables = document.querySelectorAll('.channel-item[draggable="true"]');
+  for (var i=0; i<draggables.length; i++) {
+    var el = draggables[i];
+    el.addEventListener('dragstart', dragStart);
+    el.addEventListener('dragend', dragEnd);
+    el.addEventListener('dragover', dragOver);
+    el.addEventListener('dragleave', dragLeave);
+    el.addEventListener('drop', drop);
+  }
+}
+function dragStart(e) {
+  dragSource = e.target.closest('.channel-item');
+  if (!dragSource) return;
+  e.dataTransfer.setData('text/plain', 'drag');
+  e.dataTransfer.effectAllowed = 'move';
+  dragSource.style.opacity = '0.5';
+}
+function dragEnd() { if(dragSource) dragSource.style.opacity = ''; cleanupDragOver(); dragSource = null; }
+function dragOver(e) { e.preventDefault(); var target = e.target.closest('.channel-item'); if(target && target !== dragSource) target.classList.add('drag-over'); }
+function dragLeave(e) { var target = e.target.closest('.channel-item'); if(target) target.classList.remove('drag-over'); }
+function drop(e) {
+  e.preventDefault();
+  var targetItem = e.target.closest('.channel-item');
+  if(!dragSource || !targetItem || dragSource === targetItem) { cleanupDragOver(); return; }
+  var srcCat = dragSource.getAttribute('data-cat');
+  var tgtCat = targetItem.getAttribute('data-cat');
+  if(srcCat !== tgtCat) { cleanupDragOver(); return; }
+  var srcIdx = parseInt(dragSource.getAttribute('data-idx'), 10);
+  var tgtIdx = parseInt(targetItem.getAttribute('data-idx'), 10);
+  if(isNaN(srcIdx) || isNaN(tgtIdx)) { cleanupDragOver(); return; }
+  var arr = channels[srcCat].slice();
+  var moved = arr[srcIdx];
+  arr.splice(srcIdx, 1);
+  arr.splice(tgtIdx, 0, moved);
+  reorderCategory(srcCat, arr);
+  render(curFilter, curSubgroup);
+  cleanupDragOver();
+}
+function cleanupDragOver() { var all = document.querySelectorAll('.channel-item'); for(var i=0;i<all.length;i++) all[i].classList.remove('drag-over'); }
+function reorderCategory(catKey, newArr) { channels[catKey] = newArr; saveOrder(catKey, newArr); }
+
+// ---------- PLAYBACK ----------
+function destroyPlayers() {
+  if(stallTimer) clearInterval(stallTimer);
+  if(keepAliveTimer) clearInterval(keepAliveTimer);
+  if(retryTimer) clearTimeout(retryTimer);
+  if(hlsInst) { try { hlsInst.destroy(); } catch(e){} hlsInst = null; }
+}
+function playNative(url, name) {
+  var wrap = document.getElementById('vwrap');
+  var vid = document.getElementById('vplayer');
+  if(!vid) {
+    wrap.innerHTML = '<video id="vplayer" controls autoplay playsinline style="width:100%;height:100%;"></video>';
+    vid = document.getElementById('vplayer');
+  }
+  vid.src = url;
+  vid.play().catch(function(e){ console.warn(e); scheduleRetry(url, name); });
+}
+function scheduleRetry(url, name) {
+  if(retryTimer) clearTimeout(retryTimer);
+  retryTimer = setTimeout(function() {
+    if(cur && cur.url === url) playInternal(url, name);
+  }, 3000);
+}
+function playInternal(url, name) {
+  var wrap = document.getElementById('vwrap');
+  if(!jsEnabled || !window.Hls || !Hls.isSupported() || isOldIOS()) {
+    playNative(url, name);
+    return;
+  }
+  var vid = document.getElementById('vplayer');
+  if(!vid) {
+    wrap.innerHTML = '<video id="vplayer" controls autoplay playsinline style="width:100%;height:100%;"></video>';
+    vid = document.getElementById('vplayer');
+  }
+  if(hlsInst) try { hlsInst.destroy(); } catch(e){}
+  hlsInst = new Hls({ enableWorker: false, maxBufferLength: 30 });
+  hlsInst.loadSource(url);
+  hlsInst.attachMedia(vid);
+  hlsInst.on(Hls.Events.MANIFEST_PARSED, function() { vid.play().catch(function(){}); });
+  hlsInst.on(Hls.Events.ERROR, function(_, data) {
+    if(data.fatal) scheduleRetry(url, name);
+  });
+}
+function play(url, name, referer) {
+  if(window.innerWidth <= 768) document.getElementById('channel-list').classList.remove('show');
+  cur = { url: url, name: name };
+  document.getElementById('ch-title').innerHTML = name;
+  destroyPlayers();
+  var wrap = document.getElementById('vwrap');
+  wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;"><div class="spinner"></div><span>Laddar ' + name + '…</span></div>';
+  render(curFilter, curSubgroup);
+  setTimeout(function() { playInternal(url, name); }, 50);
+}
+
+function toggleJSengine() {
+  jsEnabled = !jsEnabled;
+  var btn = document.getElementById('jsToggleBtn');
+  btn.innerHTML = jsEnabled ? '⚙️ JS PÅ' : '⚠️ JS AV';
+  btn.classList.toggle('js-toggle-off', !jsEnabled);
+  localStorage.setItem('xom_js_toggle', jsEnabled ? 'on' : 'off');
+  if(cur) play(cur.url, cur.name, '');
+}
+function toggleList() { document.getElementById('channel-list').classList.toggle('show'); }
+function fav(url, name) {
+  var idx = -1;
+  for(var i=0;i<favs.length;i++) if(favs[i].url === url) { idx = i; break; }
+  if(idx > -1) favs.splice(idx,1);
+  else favs.push({url:url, name:name});
+  localStorage.setItem('xomfavs', JSON.stringify(favs));
+  render(curFilter, curSubgroup);
+}
+function reload() { if(cur) play(cur.url, cur.name, ''); }
+function pip() { var v=document.getElementById('vplayer'); if(v && document.pictureInPictureEnabled) { document.pictureInPictureElement ? document.exitPictureInPicture() : v.requestPictureInPicture().catch(function(){}); } }
+function fs() { var w=document.getElementById('vwrap'); document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen().catch(function(){}); }
+function toggleTV() { tvMode=!tvMode; document.body.classList.toggle('tv-mode', tvMode); document.getElementById('tvBtn').innerHTML = tvMode ? '🖥️ Normal' : '📺 TV-läge'; if(tvMode && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function(){}); else if(document.fullscreenElement) document.exitFullscreen(); localStorage.setItem('xomtv', tvMode?'1':''); if(cur) reload(); }
+
+// Filter functions
+function showAll() { setActive(document.getElementById('btnAll')); curFilter=null; curSubgroup=null; render(null,null); }
+function filterCat(cat) { setActive(document.getElementById('btnIfilm')); curFilter=cat; curSubgroup=null; render(cat,null); }
+function filterSubgroup(sgKey, btnId) { setActive(document.getElementById(btnId)); curFilter='telewebion'; curSubgroup=sgKey; render('telewebion', sgKey); }
+function setActive(btn) { var btns = document.querySelectorAll('.nav-btn'); for(var i=0;i<btns.length;i++) btns[i].classList.remove('active'); if(btn) btn.classList.add('active'); }
+
+// INIT
+(function() {
+  try { favs = JSON.parse(localStorage.getItem('xomfavs') || '[]'); } catch(e){ favs=[]; }
+  var oldDevice = isOldIOS();
+  if(oldDevice) {
+    jsEnabled = false;
+    document.getElementById('compat-note').innerHTML = '⚠️ Äldre enhet: Native läge (JS AV)';
+    localStorage.setItem('xom_js_toggle', 'off');
+  } else {
+    var savedJS = localStorage.getItem('xom_js_toggle');
+    jsEnabled = savedJS !== 'off';
+  }
+  var jsBtn = document.getElementById('jsToggleBtn');
+  jsBtn.innerHTML = jsEnabled ? '⚙️ JS PÅ' : '⚠️ JS AV';
+  jsBtn.classList.toggle('js-toggle-off', !jsEnabled);
+  if(localStorage.getItem('xomtv') === '1') { tvMode=true; document.body.classList.add('tv-mode'); document.getElementById('tvBtn').innerHTML = '🖥️ Normal'; }
+  render(null,null);
+  // Event listeners
+  document.getElementById('btnAll').addEventListener('click', showAll);
+  document.getElementById('btnSarasari').addEventListener('click', function(){ filterSubgroup('sarasari','btnSarasari'); });
+  document.getElementById('btnOstani').addEventListener('click', function(){ filterSubgroup('ostani','btnOstani'); });
+  document.getElementById('btnEkhtesasi').addEventListener('click', function(){ filterSubgroup('ekhtesasi','btnEkhtesasi'); });
+  document.getElementById('btnRadio').addEventListener('click', function(){ filterSubgroup('radio','btnRadio'); });
+  document.getElementById('btnIfilm').addEventListener('click', function(){ filterCat('ifilm'); });
+  document.getElementById('toggleListBtn').addEventListener('click', toggleList);
+  document.getElementById('closeListBtn').addEventListener('click', toggleList);
+  document.getElementById('pipBtn').addEventListener('click', pip);
+  document.getElementById('fsBtn').addEventListener('click', fs);
+  document.getElementById('reloadBtn').addEventListener('click', reload);
+  document.getElementById('tvBtn').addEventListener('click', toggleTV);
+  document.getElementById('jsToggleBtn').addEventListener('click', toggleJSengine);
+  document.getElementById('ua-select').addEventListener('change', function(){ if(cur) reload(); });
+})();
 </script>
 </body>
 </html>
