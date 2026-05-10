@@ -1,746 +1,528 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Telewebion · iFilm | Dra & sortera</title>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); color: #fff; min-height: 100vh; }
-    .header { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(78,204,163,0.3); }
-    .header h1 { font-size: 2.3em; color: #4ecca3; letter-spacing: -0.5px; margin-bottom: 6px; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-    .header p { opacity: 0.8; font-size: 0.95rem; }
-    .nav-buttons { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px; background: rgba(0,0,0,0.2); }
-    .nav-btn { background: #1e2f3f; color: #e0e0e0; border: none; padding: 8px 20px; border-radius: 40px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; font-size: 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-    .nav-btn:hover, .nav-btn.active { background: #4ecca3; color: #0a1c2a; transform: scale(1.02); box-shadow: 0 4px 10px rgba(78,204,163,0.3); }
-    .container { display: flex; height: calc(100vh - 220px); padding: 0 20px 20px 20px; gap: 20px; }
-    .channel-list { width: 290px; background: rgba(0,0,0,0.45); backdrop-filter: blur(6px); overflow-y: auto; border-radius: 24px; padding: 14px; scrollbar-width: thin; }
-    .video-container { flex: 1; background: #03090e; border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #2c5f6e; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-    .video-header { background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #4ecca355; }
-    .video-title { font-size: 1.25rem; font-weight: bold; color: #4ecca3; letter-spacing: -0.2px; }
-    .video-controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .btn { background: #1f3e48; color: white; border: none; padding: 7px 16px; border-radius: 40px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
-    .btn:hover { background: #4ecca3; color: #0a1c2a; transform: translateY(-1px); }
-    .ua-selector { padding: 4px 0; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 8px; }
-    .ua-selector select { background: #1e2f3f; color: white; border: 1px solid #4ecca3; padding: 5px 12px; border-radius: 28px; cursor: pointer; font-size: 0.75rem; }
-    .video-wrapper { flex: 1; position: relative; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    video, iframe { width: 100%; height: 100%; object-fit: contain; border: none; background: black; }
-    .error-msg { text-align: center; padding: 40px; color: #ffbb99; }
-    .category-title { font-weight: 700; font-size: 1.1rem; padding: 12px 6px 6px 6px; color: #4ecca3; border-bottom: 2px solid #4ecca3; margin: 12px 0 8px 0; letter-spacing: -0.2px; }
-    .subgroup-title { font-weight: 600; font-size: 0.82rem; padding: 8px 10px 4px 10px; color: #a8e6d2; border-left: 3px solid #4ecca3; margin: 10px 0 4px 4px; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.85; background: rgba(78,204,163,0.07); border-radius: 0 8px 8px 0; }
-    .channel-item { padding: 9px 12px; margin: 6px 0; cursor: grab; border-radius: 20px; transition: all 0.2s; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); backdrop-filter: blur(2px); user-select: none; }
-    .channel-item:active { cursor: grabbing; }
-    .channel-item.drag-over { border: 2px dashed #4ecca3; background: #4ecca355; }
-    .channel-item.blue   { background: rgba(0,123,255,0.75); }
-    .channel-item:hover  { opacity: 0.9; transform: translateX(5px); filter: brightness(1.05); }
-    .channel-item.active { box-shadow: 0 0 0 2px #4ecca3, 0 0 12px #4ecca3; font-weight: bold; background: rgba(0,0,0,0.5); }
-    .fav-btn { background: none; border: none; color: #ffd966; cursor: pointer; font-size: 1.2rem; margin-left: 8px; }
-    .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid rgba(78,204,163,0.3); border-radius: 50%; border-top-color: #4ecca3; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-thumb { background: #4ecca3; border-radius: 10px; }
-    .close-btn { display: none; position: fixed; top: 20px; right: 20px; z-index: 1001; background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 40px; cursor: pointer; font-weight: bold; }
-    .js-toggle-off { background: #c95a2e !important; box-shadow: 0 0 8px #ff884d; }
-    .buffer-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: #4ecca3; width: 0%; transition: width 0.3s; z-index: 10; opacity: 0.7; }
-    @media (max-width: 768px) {
-      .container { flex-direction: column; height: auto; }
-      .channel-list { position: fixed; left: 0; top: 0; width: 85%; max-width: 320px; height: 100%; z-index: 1000; border-radius: 0 24px 24px 0; padding: 20px; transform: translateX(-100%); transition: transform 0.25s ease; overflow-y: auto; background: #0a1c28f2; backdrop-filter: blur(16px); }
-      .channel-list.show { transform: translateX(0); }
-      .close-btn { display: block; }
-    }
-    .tv-mode .video-container { border-radius: 0; }
-  </style>
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1,maximum-scale=1">
+
+<title>Telewebion · iFilm</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+
+body{
+  background:#111;
+  color:#fff;
+  font-family:Arial,sans-serif;
+}
+
+.header{
+  background:#1a1a1a;
+  padding:12px;
+  text-align:center;
+}
+
+.header h1{
+  color:#4ecca3;
+  font-size:22px;
+}
+
+.nav-buttons{
+  display:flex;
+  overflow-x:auto;
+  gap:8px;
+  padding:10px;
+  background:#1b1b1b;
+}
+
+.nav-btn{
+  flex-shrink:0;
+  border:none;
+  background:#2d2d2d;
+  color:white;
+  padding:8px 14px;
+  border-radius:18px;
+  font-size:13px;
+}
+
+.nav-btn.active{
+  background:#4ecca3;
+  color:black;
+}
+
+.container{
+  display:flex;
+  height:calc(100vh - 110px);
+}
+
+.channel-list{
+  width:280px;
+  overflow-y:auto;
+  background:#1b1b1b;
+}
+
+.video-container{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  background:black;
+}
+
+.video-header{
+  background:#181818;
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.video-title{
+  color:#4ecca3;
+  font-weight:bold;
+  font-size:16px;
+}
+
+.video-wrapper{
+  flex:1;
+  background:black;
+}
+
+video{
+  width:100%;
+  height:100%;
+  background:black;
+}
+
+.category-title{
+  padding:10px;
+  color:#4ecca3;
+  font-weight:bold;
+  border-bottom:1px solid #333;
+}
+
+.channel-item{
+  padding:12px;
+  margin:6px;
+  border-radius:12px;
+  background:#2b2b2b;
+  cursor:pointer;
+  font-size:14px;
+}
+
+.channel-item:hover{
+  background:#3b3b3b;
+}
+
+.channel-item.active{
+  border:2px solid #4ecca3;
+}
+
+.btn{
+  border:none;
+  background:#2b2b2b;
+  color:white;
+  padding:7px 12px;
+  border-radius:18px;
+  margin-left:6px;
+}
+
+.error-msg{
+  height:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  text-align:center;
+}
+
+.spinner{
+  width:28px;
+  height:28px;
+  border:4px solid rgba(255,255,255,0.2);
+  border-top:4px solid #4ecca3;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  margin-bottom:12px;
+}
+
+@keyframes spin{
+  to{
+    transform:rotate(360deg);
+  }
+}
+
+@media(max-width:768px){
+
+  .container{
+    flex-direction:column;
+  }
+
+  .channel-list{
+    width:100%;
+    height:42%;
+  }
+
+  .video-container{
+    height:58%;
+  }
+}
+
+</style>
 </head>
+
 <body>
+
 <div class="header">
   <h1>📡 Telewebion · iFilm</h1>
-  <p>Dra för att ändra ordning • Klicka för att spela</p>
 </div>
 
 <div class="nav-buttons">
-  <button class="nav-btn active" onclick="showAll(this)">🎞 Alla kanaler</button>
-  <button class="nav-btn" onclick="filterSubgroup(this,'sarasari')">🌐 Sarasari</button>
-  <button class="nav-btn" onclick="filterSubgroup(this,'ostani')">🏙️ Ostani</button>
-  <button class="nav-btn" onclick="filterSubgroup(this,'ekhtesasi')">🎯 Ekhtesasi</button>
-  <button class="nav-btn" onclick="filterSubgroup(this,'radio')">📻 Radio</button>
-  <button class="nav-btn" onclick="filterCat(this,'ifilm')">🎬 iFilm</button>
+
+  <button class="nav-btn active"
+  onclick="showAll(this)">
+  Alla
+  </button>
+
+  <button class="nav-btn"
+  onclick="filterCategory(this,'telewebion')">
+  Telewebion
+  </button>
+
+  <button class="nav-btn"
+  onclick="filterCategory(this,'ifilm')">
+  iFilm
+  </button>
+
 </div>
 
 <div class="container">
-  <aside class="channel-list" id="channel-list">
-    <button class="close-btn" onclick="toggleList()">✕ Stäng</button>
-    <div id="ch-container"></div>
+
+  <aside class="channel-list">
+    <div id="channelContainer"></div>
   </aside>
+
   <main class="video-container">
+
     <div class="video-header">
+
+      <div class="video-title"
+      id="title">
+      Välj kanal
+      </div>
+
       <div>
-        <div class="video-title" id="ch-title">📡 Välj en kanal</div>
-        <div class="ua-selector">UA:
-          <select id="ua-select" onchange="if(cur) reload()">
-            <option value="">Auto (standard)</option>
-            <option value="Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)">📱 iPhone</option>
-            <option value="Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X)">📲 iPad</option>
-            <option value="Mozilla/5.0 (Linux; Android 10)">🤖 Android</option>
-          </select>
-        </div>
+
+        <button class="btn"
+        onclick="reload()">
+        ↻
+        </button>
+
+        <button class="btn"
+        onclick="fullscreenPlayer()">
+        ⛶
+        </button>
+
       </div>
-      <div class="video-controls">
-        <button class="btn" onclick="toggleList()">📺 Kanaler</button>
-        <button class="btn" onclick="pip()">⧉ PiP</button>
-        <button class="btn" onclick="fs()">⛶ Fullskärm</button>
-        <button class="btn" onclick="reload()">↻ Ladda om</button>
-        <button class="btn" id="tv-btn" onclick="toggleTV()">📺 TV-läge</button>
-        <button class="btn" id="jsToggleBtn" onclick="toggleJSengine()">⚙️ JS PÅ</button>
+
+    </div>
+
+    <div class="video-wrapper"
+    id="playerWrap">
+
+      <div class="error-msg">
+        <h3>Välj en kanal</h3>
       </div>
+
     </div>
-    <div class="video-wrapper" id="vwrap">
-      <div class="error-msg"><h3>👈 Välj en kanal</h3><p style="font-size:13px; margin-top:12px;">✨ Dra för att ändra ordning • Tryck JS AV om kanalen inte startar</p></div>
-    </div>
+
   </main>
+
 </div>
 
 <script>
-  // ---- Subgroup definitions for Telewebion ----
-  const subgroups = {
-    telewebion: [
-      {
-        key: 'sarasari',
-        label: '🌐 Sarasari',
-        channels: [
-          { name: 'TV1',      url: 'https://ncdn.telewebion.ir/tv1/live/playlist.m3u8',      icon: '📡' },
-          { name: 'TV2',      url: 'https://ncdn.telewebion.ir/tv2/live/playlist.m3u8',      icon: '📡' },
-          { name: 'TV3',      url: 'https://ncdn.telewebion.ir/tv3/live/playlist.m3u8',      icon: '📡' },
-          { name: 'TV4',      url: 'https://ncdn.telewebion.ir/tv4/live/playlist.m3u8',       icon: '📡' },
-          { name: 'TAMASHA',  url: 'https://ncdn.telewebion.ir/hdtest/live/playlist.m3u8',   icon: '🎭' },
-          { name: 'POOYA',    url: 'https://ncdn.telewebion.ir/pooya/live/playlist.m3u8',    icon: '🧸' },
-          { name: 'IFILM',    url: 'https://ncdn.telewebion.ir/ifilm/live/playlist.m3u8',    icon: '🎬' },
-          { name: 'NAMAYESH', url: 'https://ncdn.telewebion.ir/namayesh/live/playlist.m3u8', icon: '🎪' },
-          { name: 'TEHRAN',   url: 'https://ncdn.telewebion.ir/tehran/live/playlist.m3u8',    icon: '🏙️' },
-          { name: 'MOSTANAD', url: 'https://ncdn.telewebion.ir/mostanad/live/playlist.m3u8', icon: '📽️' },
-          { name: 'QURAN',    url: 'https://ncdn.telewebion.ir/quran/live/playlist.m3u8',    icon: '📖' },
-          { name: 'AMOUZESH', url: 'https://ncdn.telewebion.ir/amouzesh/live/playlist.m3u8',  icon: '📚' },
-          { name: 'SALAMAT',  url: 'https://ncdn.telewebion.ir/salamat/live/playlist.m3u8',   icon: '💚' },
-          { name: 'OFOGH',    url: 'https://ncdn.telewebion.ir/ofogh/live/playlist.m3u8',    icon: '🌟' },
-          { name: 'OMID',     url: 'https://ncdn.telewebion.ir/omid/live/playlist.m3u8',      icon: '⭐' },
-          { name: 'SEPEHR',   url: 'https://ncdn.telewebion.ir/sepehr/live/playlist.m3u8',   icon: '🕌' },
-          { name: 'IRINN',    url: 'https://ncdn.telewebion.ir/irinn/live/playlist.m3u8',    icon: '📰' },
-          { name: 'TV1+',     url: 'https://ncdn.telewebion.ir/tv1plus/live/playlist.m3u8',  icon: '🧑' },
-          { name: 'Nava',     url: 'https://ncdn.telewebion.ir/nava/live/playlist.m3u8',     icon: '🎵' },
-          { name: 'Nama',     url: 'https://ncdn.telewebion.ir/nama/live/playlist.m3u8',     icon: '🎼' },
-        ]
-      },
-      {
-        key: 'ostani',
-        label: '🏙️ Ostani',
-        channels: [
-          { name: 'URMIA',      url: 'https://ncdn.telewebion.ir/azarbayjangharbi/live/playlist.m3u8',  icon: '🌍' },
-          { name: 'SAHAND',     url: 'https://ncdn.telewebion.ir/sahand/live/playlist.m3u8',           icon: '⛰️' },
-          { name: 'ALBORZ',     url: 'https://ncdn.telewebion.ir/alborz/live/playlist.m3u8',           icon: '🏔️' },
-          { name: 'ESFAHAN',    url: 'https://ncdn.telewebion.ir/esfahan/live/playlist.m3u8',          icon: '🕌' },
-          { name: 'SABALAN',    url: 'https://ncdn.telewebion.ir/sabalan/live/playlist.m3u8',          icon: '🗻' },
-          { name: 'ILAM',       url: 'https://ncdn.telewebion.ir/ilam/live/playlist.m3u8',              icon: '🏞️' },
-          { name: 'BUSHEHR',    url: 'https://ncdn.telewebion.ir/bushehr/live/playlist.m3u8',          icon: '🌊' },
-          { name: 'JAHANBIN',   url: 'https://ncdn.telewebion.ir/jahanbin/live/playlist.m3u8',         icon: '🔭' },
-          { name: 'ABADAN',     url: 'https://ncdn.telewebion.ir/abadan/live/playlist.m3u8',           icon: '🏭' },
-          { name: 'KH.RAZAVI',  url: 'https://ncdn.telewebion.ir/khorasanrazavi/live/playlist.m3u8',   icon: '🕌' },
-          { name: 'ATRAK',      url: 'https://ncdn.telewebion.ir/atrak/live/playlist.m3u8',            icon: '🌊' },
-          { name: 'KHALIJFARS', url: 'https://ncdn.telewebion.ir/khalijefars/live/playlist.m3u8',      icon: '🌊' },
-          { name: 'KHOZESTAN',  url: 'https://ncdn.telewebion.ir/khoozestan/live/playlist.m3u8',       icon: '🏜️' },
-          { name: 'ESHRAGH',    url: 'https://ncdn.telewebion.ir/eshragh/live/playlist.m3u8',          icon: '✨' },
-          { name: 'SEMNAN',     url: 'https://ncdn.telewebion.ir/semnan/live/playlist.m3u8',           icon: '🏜️' },
-          { name: 'HAMON',      url: 'https://ncdn.telewebion.ir/hamoon/live/playlist.m3u8',           icon: '🏞️' },
-          { name: 'FARS',       url: 'https://ncdn.telewebion.ir/fars/live/playlist.m3u8',             icon: '🏛️' },
-          { name: 'GHAZVIN',    url: 'https://ncdn.telewebion.ir/qazvin/live/playlist.m3u8',           icon: '🏛️' },
-          { name: 'NOOR',       url: 'https://ncdn.telewebion.ir/noor/live/playlist.m3u8',             icon: '💡' },
-          { name: 'LORESTAN',   url: 'https://ncdn.telewebion.ir/aflak/live/playlist.m3u8',            icon: '🏞️' },
-          { name: 'KERMAN',     url: 'https://ncdn.telewebion.ir/kerman/live/playlist.m3u8',           icon: '🏜️' },
-          { name: 'ZAGROS',     url: 'https://ncdn.telewebion.ir/zagros/live/playlist.m3u8',           icon: '⛰️' },
-          { name: 'DENA',       url: 'https://ncdn.telewebion.ir/dena/live/playlist.m3u8',             icon: '⛰️' },
-          { name: 'KISH',       url: 'https://ncdn.telewebion.ir/kish/live/playlist.m3u8',              icon: '🏝️' },
-          { name: 'GOLESTAN',   url: 'https://ncdn.telewebion.ir/sabz/live/playlist.m3u8',              icon: '🌳' },
-          { name: 'BARAN',      url: 'https://ncdn.telewebion.ir/baran/live/playlist.m3u8',             icon: '☔' },
-          { name: 'KORDESTAN',  url: 'https://ncdn.telewebion.ir/kordestan/live/playlist.m3u8',        icon: '🏔️' },
-          { name: 'YAZD',       url: 'https://ncdn.telewebion.ir/taban/live/playlist.m3u8',            icon: '🏜️' },
-          { name: 'TABARESTAN', url: 'https://ncdn.telewebion.ir/tabarestan/live/playlist.m3u8',       icon: '🌳' },
-          { name: 'AFTAB',      url: 'https://ncdn.telewebion.ir/aftab/live/playlist.m3u8',            icon: '☀️' },
-          { name: 'MAHABAD',    url: 'https://ncdn.telewebion.ir/mahabad/live/playlist.m3u8',          icon: '🏞️' },
-          { name: 'HAMADAN',    url: 'https://ncdn.telewebion.ir/sina/live/playlist.m3u8',             icon: '🏛️' },
-          { name: 'KHAVARAN',   url: 'https://ncdn.telewebion.ir/khavaran/live/playlist.m3u8',         icon: '🌅' },
-        ]
-      },
-      {
-        key: 'ekhtesasi',
-        label: '🎯 Ekhtesasi',
-        channels: [
-          { name: 'HABIB',        url: 'https://ncdn.telewebion.ir/habib/live/playlist.m3u8',              icon: '🤝' },
-          { name: 'Golkhane',     url: 'https://ncdn.telewebion.ir/golkhane/live/playlist.m3u8',           icon: '🌐' },
-          { name: 'Labbayk',      url: 'https://ncdn.telewebion.ir/labbayk/live/playlist.m3u8',            icon: '🌐' },
-          { name: 'Maddahi',      url: 'https://ncdn.telewebion.ir/tekyemadahi/live/playlist.m3u8',        icon: '🌐' },
-          { name: 'Energi',       url: 'https://ncdn.telewebion.ir/baenergy/live/playlist.m3u8',          icon: '🎬' },
-          { name: 'Velayat',      url: 'https://ncdn.telewebion.ir/velayat/live/playlist.m3u8',            icon: '📖' },
-          { name: 'Karoon',       url: 'https://ncdn.telewebion.ir/karoon/live/playlist.m3u8',            icon: '🎨' },
-          { name: 'Palestine',    url: 'https://ncdn.telewebion.ir/palestine/live/playlist.m3u8',          icon: '📅' },
-          { name: 'Nesfejahan',   url: 'https://ncdn.telewebion.ir/nesfejahan/live/playlist.m3u8',         icon: '🌿' },
-        ]
-      },
-      {
-        key: 'radio',
-        label: '📻 Radio',
-        channels: [
-          { name: 'Radio Ava',       url: 'https://ncdn.telewebion.ir/radioava/live/playlist.m3u8',        icon: '🕌' },
-          { name: 'Radio Namayesh',  url: 'https://ncdn.telewebion.ir/radionamayesh/live/playlist.m3u8',   icon: '🎵' },
-          { name: 'Radio Tehran',    url: 'https://ncdn.telewebion.ir/radiotehran/live/playlist.m3u8',     icon: '👥' },
-          { name: 'Radio Payam',     url: 'https://ncdn.telewebion.ir/radiopayam/live/playlist.m3u8',      icon: '🛍️' },
-          { name: 'Radio Salamat',   url: 'https://ncdn.telewebion.ir/radiosalamat/live/playlist.m3u8',    icon: '🛍️' },
-          { name: 'Radio Tartil',    url: 'https://ncdn.telewebion.ir/radiotartil/live/playlist.m3u8',     icon: '🛍️' },
-          { name: 'Radio Iran',      url: 'https://ncdn.telewebion.ir/radioiran/live/playlist.m3u8',       icon: '🛍️' },
-        ]
-      }
-    ]
-  };
-
-  const ifilmRaw = [
-    { name: 'iFilm Farsi',   url: 'https://live.presstv.ir/hls/ifilmfa.m3u8',  color: 'blue' },
-    { name: 'iFilm Dari',    url: 'https://live.presstv.ir/hls/ifilm2.m3u8',   color: 'blue' },
-    { name: 'iFilm English', url: 'https://live.presstv.ir/hls/ifilmen.m3u8',  color: 'blue' },
-    { name: 'iFilm Arabic',  url: 'https://live.presstv.ir/hls/ifilmar.m3u8',  color: 'blue' }
-  ];
-
-  function buildTelewebionFlat() {
-    const flat = [];
-    for (const sg of subgroups.telewebion) {
-      for (const ch of sg.channels) flat.push({...ch, subgroup: sg.key});
-    }
-    return flat;
-  }
-
-  function loadOrder(cat) { try { const o = localStorage.getItem(`order_${cat}`); return o ? JSON.parse(o) : null; } catch(e){ return null; } }
-  function saveOrder(cat, arr) { localStorage.setItem(`order_${cat}`, JSON.stringify(arr.map(c=>c.url))); }
-
-  function applyStoredOrderFlat(flat, catKey) {
-    const stored = loadOrder(catKey);
-    if(!stored || !stored.length) return flat;
-    const map = new Map(flat.map(c=>[c.url, c]));
-    const ordered = [];
-    for(let url of stored) if(map.has(url)) ordered.push(map.get(url));
-    for(let c of flat) if(!ordered.includes(c)) ordered.push(c);
-    return ordered;
-  }
-
-  const telewebionFlat = applyStoredOrderFlat(buildTelewebionFlat(), 'telewebion');
-  const ifilmOrdered   = applyStoredOrderFlat([...ifilmRaw], 'ifilm');
-
-  const channels = {
-    telewebion: telewebionFlat,
-    ifilm: ifilmOrdered
-  };
-
-  function reorderCategory(catKey, newArr) {
-    channels[catKey] = newArr;
-    saveOrder(catKey, newArr);
-  }
-
-  let hlsInst = null;
-  let dashInst = null;
-  let cur = null;
-  let favs = [];
-  let jsEnabled = true;
-  let tvMode = false;
-
-  // --- IMPROVED: Retry/reconnect state ---
-  let retryCount = 0;
-  let retryTimer = null;
-  let keepAliveTimer = null;
-  let stallTimer = null;
-  let lastTime = -1;
-  let lastTimeStamp = Date.now();
-
-  function isTV() {
-    const ua = navigator.userAgent || '';
-    return /SmartTV|webOS|SMART-TV|HbbTV|NetCast|BRAVIA|Tizen/i.test(ua) ||
-      (window.innerWidth >= 1920 && !('ontouchstart' in window) && navigator.maxTouchPoints === 0);
-  }
-
-  // --- IMPROVED: Much larger buffers, more retries, lower latency tolerance ---
-  function getHlsConfig(referer) {
-    const tv = isTV() || tvMode;
-    return {
-      enableWorker: true,
-      startPosition: -1,
-      lowLatencyMode: false,
-
-      // Large buffer to absorb network hiccups
-      maxBufferLength: 60,
-      maxMaxBufferLength: 300,
-      maxBufferSize: 200 * 1000 * 1000,   // 200 MB
-      maxBufferHole: 2.0,                  // Skip over gaps up to 2s without pausing
-
-      // Live stream sync - stay a bit behind to avoid edge stalls
-      liveSyncDurationCount: 8,
-      liveMaxLatencyDurationCount: 20,
-      liveDurationInfinity: true,
-
-      // Aggressive retry on all failures
-      fragLoadingMaxRetry: 20,
-      fragLoadingRetryDelay: 500,
-      fragLoadingMaxRetryTimeout: 30000,
-      manifestLoadingMaxRetry: 20,
-      manifestLoadingRetryDelay: 500,
-      manifestLoadingMaxRetryTimeout: 30000,
-      levelLoadingMaxRetry: 20,
-      levelLoadingRetryDelay: 500,
-      levelLoadingMaxRetryTimeout: 30000,
-
-      // Start at lowest level to reduce initial buffering stalls
-      startLevel: -1,
-      autoStartOnStall: true,
-
-      // Allow jumping over small buffer holes automatically
-      nudgeMaxRetry: 10,
-      nudgeOffset: 0.2,
-
-      // Longer timeout before abandoning a segment
-      fragLoadingTimeOut: 20000,
-      manifestLoadingTimeOut: 20000,
-      levelLoadingTimeOut: 20000,
-
-      xhrSetup(xhr) {
-        const ua = document.getElementById('ua-select').value;
-        if (ua) try { xhr.setRequestHeader('User-Agent', ua); } catch(err){}
-        if (referer) try { xhr.setRequestHeader('Referer', referer); } catch(err){}
-      }
-    };
-  }
-
-  // --- IMPROVED: Aggressive stall watcher ---
-  function startStallWatcher(vid) {
-    clearStallWatcher();
-    lastTime = -1;
-    lastTimeStamp = Date.now();
-
-    stallTimer = setInterval(() => {
-      if (!vid || vid.paused || vid.ended || vid.readyState < 2) return;
-
-      const now = Date.now();
-      const t = vid.currentTime;
-
-      if (t === lastTime) {
-        const stalledFor = (now - lastTimeStamp) / 1000;
-
-        if (stalledFor >= 3) {
-          // Try to jump ahead in buffer
-          try {
-            const ranges = vid.buffered;
-            if (ranges.length > 0) {
-              const end = ranges.end(ranges.length - 1);
-              if (end - t > 0.5) {
-                vid.currentTime = end - 0.3;
-              }
-            }
-          } catch(e) {}
-
-          // Resume loading
-          if (hlsInst) {
-            try { hlsInst.startLoad(); } catch(e) {}
-          }
-
-          vid.play().catch(() => {});
-        }
-
-        // If stalled for too long, do a soft reconnect
-        if (stalledFor >= 12) {
-          softReconnect();
-        }
-      } else {
-        lastTime = t;
-        lastTimeStamp = now;
-      }
-    }, 1000);
-  }
-
-  function clearStallWatcher() {
-    if (stallTimer) { clearInterval(stallTimer); stallTimer = null; }
-  }
-
-  // --- NEW: Soft reconnect - reattaches HLS without flickering ---
-  function softReconnect() {
-    if (!cur || !hlsInst) return;
-    console.log('[Player] Soft reconnect triggered');
-    try {
-      hlsInst.stopLoad();
-      setTimeout(() => {
-        if (!hlsInst) return;
-        hlsInst.loadSource(cur.url);
-        hlsInst.startLoad(-1);
-        const vid = document.getElementById('vplayer');
-        if (vid) vid.play().catch(() => {});
-        lastTime = -1;
-        lastTimeStamp = Date.now();
-      }, 800);
-    } catch(e) {}
-  }
-
-  // --- NEW: Keep-alive ping to detect connection drops early ---
-  function startKeepAlive() {
-    stopKeepAlive();
-    keepAliveTimer = setInterval(() => {
-      if (!cur || !hlsInst) return;
-      const vid = document.getElementById('vplayer');
-      if (!vid || vid.paused || vid.ended) return;
-      // If readyState drops to HAVE_NOTHING, reconnect
-      if (vid.readyState === 0) {
-        softReconnect();
-      }
-    }, 5000);
-  }
-
-  function stopKeepAlive() {
-    if (keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; }
-  }
-
-  // --- NEW: Exponential backoff retry ---
-  function scheduleRetry(url, name, referer) {
-    if (retryTimer) clearTimeout(retryTimer);
-    const delay = Math.min(1000 * Math.pow(1.5, retryCount), 15000);
-    retryCount++;
-    console.log(`[Player] Retry #${retryCount} in ${Math.round(delay/1000)}s`);
-    retryTimer = setTimeout(() => {
-      if (cur && cur.url === url) {
-        playInternal(url, name, referer, false);
-      }
-    }, delay);
-  }
-
-  try { favs = JSON.parse(localStorage.getItem('xomfavs') || '[]'); } catch(e) { favs = []; }
-  let curFilter = null;
-  let curSubgroup = null;
-  let dragSource = null;
-
-  function esc(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-
-  function destroyPlayers() {
-    clearStallWatcher();
-    stopKeepAlive();
-    if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
-    if (hlsInst) { try { hlsInst.destroy(); } catch(e){} hlsInst = null; }
-    if (dashInst) { try { dashInst.reset(); } catch(e){} dashInst = null; }
-    retryCount = 0;
-  }
-
-  function getSubgroupLabel(subgroupKey) {
-    const sg = subgroups.telewebion.find(s => s.key === subgroupKey);
-    return sg ? sg.label : '';
-  }
-
-  function render(filter, sgFilter) {
-    curFilter = filter;
-    curSubgroup = sgFilter;
-    const catNames = { telewebion:'📡 Telewebion', ifilm:'🎬 iFilm' };
-
-    const chRow = (ch, idx, catKey) => {
-      const star = favs.some(f=>f.url===ch.url) ? '⭐' : '☆';
-      const activeClass = (cur && cur.url===ch.url) ? 'active' : '';
-      const colorClass = ch.color || '';
-      return `<div class="channel-item ${colorClass} ${activeClass}" draggable="true" data-url="${esc(ch.url)}" data-name="${esc(ch.name)}" data-cat="${catKey}" data-idx="${idx}">
-        <span>${ch.icon ? ch.icon + ' ' : ''}${ch.name}</span>
-        <button class="fav-btn" onclick="event.stopPropagation();fav('${esc(ch.url)}','${esc(ch.name)}')">${star}</button>
-      </div>`;
-    };
-
-    let html = '';
-
-    if (filter === 'telewebion' || (!filter)) {
-      const catArr = channels.telewebion;
-      const sgMap = new Map();
-      for (const sg of subgroups.telewebion) sgMap.set(sg.key, { label: sg.label, items: [] });
-      catArr.forEach((ch, idx) => {
-        const sgKey = ch.subgroup || 'sarasari';
-        if (sgMap.has(sgKey)) sgMap.get(sgKey).items.push({ch, idx});
-      });
-
-      if (sgFilter) {
-        const sg = sgMap.get(sgFilter);
-        if (sg && sg.items.length > 0) {
-          html += `<div class="category-title">${sg.label} (${sg.items.length})</div>`;
-          html += sg.items.map(({ch, idx}) => chRow(ch, idx, 'telewebion')).join('');
-        }
-      } else {
-        html += `<div class="category-title">${catNames.telewebion} (${catArr.length})</div>`;
-        for (const [sgKey, sg] of sgMap) {
-          if (sg.items.length === 0) continue;
-          html += `<div class="subgroup-title">${sg.label}</div>`;
-          html += sg.items.map(({ch, idx}) => chRow(ch, idx, 'telewebion')).join('');
-        }
-      }
-    }
-
-    if ((filter === 'ifilm' || (!filter)) && !sgFilter) {
-      const catArr = channels.ifilm;
-      html += `<div class="category-title">${catNames.ifilm} (${catArr.length})</div>`;
-      html += catArr.map((ch, i) => chRow(ch, i, 'ifilm')).join('');
-    }
-
-    document.getElementById('ch-container').innerHTML = html;
-    attachDragListeners();
-    attachChannelEvents();
-  }
-
-  function attachChannelEvents() {
-    document.querySelectorAll('.channel-item').forEach(el => {
-      el.addEventListener('click', function(ev) {
-        if (ev.target.classList.contains('fav-btn')) return;
-        play(this.dataset.url, this.dataset.name, this.dataset.referer || '');
-      });
-    });
-  }
-
-  function attachDragListeners() {
-    document.querySelectorAll('.channel-item[draggable="true"]').forEach(el => {
-      el.addEventListener('dragstart', dragStart);
-      el.addEventListener('dragend', dragEnd);
-      el.addEventListener('dragover', dragOver);
-      el.addEventListener('dragleave', dragLeave);
-      el.addEventListener('drop', drop);
-    });
-  }
-
-  function dragStart(e) {
-    dragSource = e.target.closest('.channel-item');
-    if(!dragSource) return;
-    e.dataTransfer.setData('text/plain', 'drag');
-    e.dataTransfer.effectAllowed = 'move';
-    dragSource.style.opacity = '0.5';
-  }
-  function dragEnd() {
-    if(dragSource) dragSource.style.opacity = '';
-    document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('drag-over'));
-    dragSource = null;
-  }
-  function dragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    const target = e.target.closest('.channel-item');
-    if(target && target !== dragSource) target.classList.add('drag-over');
-  }
-  function dragLeave(e) {
-    const target = e.target.closest('.channel-item');
-    if(target) target.classList.remove('drag-over');
-  }
-  function drop(e) {
-    e.preventDefault();
-    const targetItem = e.target.closest('.channel-item');
-    if(!dragSource || !targetItem || dragSource === targetItem) { cleanupDrag(); return; }
-    const srcCat = dragSource.dataset.cat;
-    const tgtCat = targetItem.dataset.cat;
-    if(srcCat !== tgtCat) { cleanupDrag(); return; }
-    const srcIdx = parseInt(dragSource.dataset.idx);
-    const tgtIdx = parseInt(targetItem.dataset.idx);
-    if(isNaN(srcIdx) || isNaN(tgtIdx)) { cleanupDrag(); return; }
-    let arr = [...channels[srcCat]];
-    const [moved] = arr.splice(srcIdx, 1);
-    arr.splice(tgtIdx, 0, moved);
-    reorderCategory(srcCat, arr);
-    render(curFilter, curSubgroup);
-    cleanupDrag();
-  }
-  function cleanupDrag() {
-    if(dragSource) dragSource.style.opacity = '';
-    document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('drag-over'));
-    dragSource = null;
-  }
-
-  function play(url, name, referer) {
-    if (window.innerWidth <= 768) document.getElementById('channel-list').classList.remove('show');
-    cur = {url, name, referer: referer || ''};
-    retryCount = 0;
-    document.getElementById('ch-title').textContent = name;
-    destroyPlayers();
-    const wrap = document.getElementById('vwrap');
-    wrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><div class="spinner"></div><span style="margin-left:12px;">Laddar ${name}…</span></div>`;
-    render(curFilter, curSubgroup);
-    setTimeout(() => playInternal(url, name, referer || '', true), 50);
-  }
-
-  function playInternal(url, name, referer, showSpinner) {
-    const wrap = document.getElementById('vwrap');
-    if (!wrap) return;
-
-    if (!jsEnabled) {
-      wrap.innerHTML = '<video id="vplayer" controls autoplay style="width:100%;height:100%;"></video>';
-      const vid = document.getElementById('vplayer');
-      vid.src = url;
-      vid.play().catch(() => {
-        wrap.innerHTML = `<div class="error-msg"><h3>⚠️ JS AV: Kunde inte spela</h3><p>${url.substring(0,70)}</p><button class="btn" onclick="reload()">↻ Försök igen</button></div>`;
-      });
-      return;
-    }
-
-    // Reuse existing video element if already there (soft reconnect path)
-    let vid = document.getElementById('vplayer');
-    if (!vid) {
-      wrap.innerHTML = '<video id="vplayer" controls autoplay style="width:100%;height:100%;"></video>';
-      vid = document.getElementById('vplayer');
-    }
-
-    // Visibility change: auto-recover when tab regains focus
-    document.removeEventListener('visibilitychange', onVisibilityChange);
-    document.addEventListener('visibilitychange', onVisibilityChange);
-
-    if (Hls.isSupported()) {
-      if (hlsInst) { try { hlsInst.destroy(); } catch(e){} hlsInst = null; }
-      hlsInst = new Hls(getHlsConfig(referer));
-      hlsInst.loadSource(url);
-      hlsInst.attachMedia(vid);
-
-      hlsInst.on(Hls.Events.MANIFEST_PARSED, () => {
-        vid.play().catch(err => console.warn(err));
-        startStallWatcher(vid);
-        startKeepAlive();
-        retryCount = 0;
-      });
-
-      hlsInst.on(Hls.Events.ERROR, (_, d) => {
-        console.warn('[HLS Error]', d.type, d.details, d.fatal);
-        if (!d.fatal) {
-          // Non-fatal: nudge the loader
-          if (d.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR ||
-              d.details === Hls.ErrorDetails.BUFFER_NUDGE_ON_STALL) {
-            try { hlsInst.startLoad(); } catch(e) {}
-            vid.play().catch(()=>{});
-          }
-          return;
-        }
-        // Fatal errors
-        if (d.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          scheduleRetry(url, name, referer);
-        } else if (d.type === Hls.ErrorTypes.MEDIA_ERROR) {
-          try { hlsInst.recoverMediaError(); } catch(e) {}
-          setTimeout(() => { if (hlsInst) hlsInst.swapAudioCodec(); }, 500);
-          setTimeout(() => { if (hlsInst) hlsInst.recoverMediaError(); }, 1000);
-        } else {
-          scheduleRetry(url, name, referer);
-        }
-      });
-
-      // Emergency fragment abort: restart loading immediately
-      hlsInst.on(Hls.Events.FRAG_LOAD_EMERGENCY_ABORTED, () => {
-        setTimeout(() => { if (hlsInst) hlsInst.startLoad(); }, 500);
-      });
-
-      // When a level is loaded, reset retry counter
-      hlsInst.on(Hls.Events.LEVEL_LOADED, () => { retryCount = 0; });
-
-    } else if (vid.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS (Safari/iOS)
-      vid.src = url;
-      vid.addEventListener('error', () => scheduleRetry(url, name, referer), { once: true });
-      vid.addEventListener('stalled', () => {
-        setTimeout(() => { vid.load(); vid.play().catch(()=>{}); }, 1000);
-      });
-      vid.addEventListener('waiting', () => {
-        setTimeout(() => { vid.play().catch(()=>{}); }, 500);
-      });
-      vid.play().catch(() => scheduleRetry(url, name, referer));
-      startStallWatcher(vid);
-      startKeepAlive();
-    } else {
-      showErr();
-    }
-  }
-
-  // --- NEW: Recover when tab becomes visible again ---
-  function onVisibilityChange() {
-    if (document.visibilityState === 'visible' && cur) {
-      const vid = document.getElementById('vplayer');
-      if (!vid) return;
-      if (vid.paused || vid.readyState < 2) {
-        if (hlsInst) {
-          try { hlsInst.startLoad(); } catch(e) {}
-        }
-        vid.play().catch(() => softReconnect());
-      }
-    }
-  }
-
-  function showErr() {
-    document.getElementById('vwrap').innerHTML = `<div class="error-msg"><h3>⚠️ Kunde inte ladda stream</h3><p>Prova att trycka JS AV-knappen ovan.</p><button class="btn" onclick="reload()">↻ Försök igen</button></div>`;
-  }
-
-  function reload() {
-    if (cur) {
-      retryCount = 0;
-      play(cur.url, cur.name, cur.referer);
-    }
-  }
-  function pip() { const v=document.getElementById('vplayer'); if(v && document.pictureInPictureEnabled) { document.pictureInPictureElement ? document.exitPictureInPicture() : v.requestPictureInPicture().catch(()=>{}); } }
-  function fs() { const w=document.getElementById('vwrap'); document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen().catch(()=>{}); }
-
-  function toggleTV() {
-    tvMode = !tvMode;
-    document.body.classList.toggle('tv-mode', tvMode);
-    document.getElementById('tv-btn').textContent = tvMode ? '🖥️ Normal' : '📺 TV-läge';
-    if(tvMode && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
-    else if(document.fullscreenElement) document.exitFullscreen();
-    localStorage.setItem('xomtv', tvMode ? '1' : '');
-    if (cur) reload();
-  }
-
-  function toggleJSengine() {
-    jsEnabled = !jsEnabled;
-    const btn = document.getElementById('jsToggleBtn');
-    btn.textContent = jsEnabled ? '⚙️ JS PÅ' : '⚠️ JS AV';
-    btn.classList.toggle('js-toggle-off', !jsEnabled);
-    if (cur) play(cur.url, cur.name, cur.referer);
-    else document.getElementById('vwrap').innerHTML = `<div class="error-msg"><h3>🔘 JS är nu ${jsEnabled ? 'AKTIVERAD' : 'AVSTÄNGD'}</h3><p>Välj en kanal igen.</p></div>`;
-    localStorage.setItem('xom_js_toggle', jsEnabled ? 'on' : 'off');
-  }
-
-  function showAll(btn) {
-    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    curFilter = null; curSubgroup = null;
-    render(null, null);
-  }
-  function filterCat(btn, cat) {
-    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    curSubgroup = null;
-    render(cat, null);
-  }
-  function filterSubgroup(btn, sgKey) {
-    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    render('telewebion', sgKey);
-  }
-  function toggleList() { document.getElementById('channel-list').classList.toggle('show'); }
-  function fav(url, name) {
-    const i = favs.findIndex(f=>f.url===url);
-    i > -1 ? favs.splice(i,1) : favs.push({url,name});
-    localStorage.setItem('xomfavs', JSON.stringify(favs));
-    render(curFilter, curSubgroup);
-  }
-
-  (function loadPrefs() {
-    try {
-      const savedJS = localStorage.getItem('xom_js_toggle');
-      jsEnabled = savedJS !== 'off';
-      const btn = document.getElementById('jsToggleBtn');
-      btn.textContent = jsEnabled ? '⚙️ JS PÅ' : '⚠️ JS AV';
-      btn.classList.toggle('js-toggle-off', !jsEnabled);
-    } catch(err) {}
-    const ua = navigator.userAgent || '';
-    const detectedTV = /SmartTV|webOS|SMART-TV|HbbTV|NetCast|BRAVIA|Tizen/i.test(ua) ||
-      (window.innerWidth >= 1920 && !('ontouchstart' in window) && navigator.maxTouchPoints === 0);
-    if (detectedTV || localStorage.getItem('xomtv') === '1') {
-      document.body.classList.add('tv-mode');
-      tvMode = true;
-      document.getElementById('tv-btn').textContent = '🖥️ Normal';
-    }
-  })();
-
-  render(null, null);
+
+const isiOS =
+/iPad|iPhone|iPod/.test(navigator.userAgent);
+
+let current = null;
+let hls = null;
+let currentFilter = null;
+
+const channels = {
+
+telewebion:[
+
+{name:'TV1',url:'https://ncdn.telewebion.ir/tv1/live/playlist.m3u8'},
+{name:'TV2',url:'https://ncdn.telewebion.ir/tv2/live/playlist.m3u8'},
+{name:'TV3',url:'https://ncdn.telewebion.ir/tv3/live/playlist.m3u8'},
+{name:'TV4',url:'https://ncdn.telewebion.ir/tv4/live/playlist.m3u8'},
+{name:'IFILM',url:'https://ncdn.telewebion.ir/ifilm/live/playlist.m3u8'},
+{name:'NAMAYESH',url:'https://ncdn.telewebion.ir/namayesh/live/playlist.m3u8'},
+{name:'TAMASHA',url:'https://ncdn.telewebion.ir/hdtest/live/playlist.m3u8'},
+{name:'POOYA',url:'https://ncdn.telewebion.ir/pooya/live/playlist.m3u8'},
+{name:'TEHRAN',url:'https://ncdn.telewebion.ir/tehran/live/playlist.m3u8'},
+{name:'MOSTANAD',url:'https://ncdn.telewebion.ir/mostanad/live/playlist.m3u8'},
+{name:'QURAN',url:'https://ncdn.telewebion.ir/quran/live/playlist.m3u8'},
+{name:'AMOUZESH',url:'https://ncdn.telewebion.ir/amouzesh/live/playlist.m3u8'},
+{name:'SALAMAT',url:'https://ncdn.telewebion.ir/salamat/live/playlist.m3u8'},
+{name:'OFOGH',url:'https://ncdn.telewebion.ir/ofogh/live/playlist.m3u8'},
+{name:'OMID',url:'https://ncdn.telewebion.ir/omid/live/playlist.m3u8'},
+{name:'SEPEHR',url:'https://ncdn.telewebion.ir/sepehr/live/playlist.m3u8'},
+{name:'IRINN',url:'https://ncdn.telewebion.ir/irinn/live/playlist.m3u8'},
+{name:'TV1+',url:'https://ncdn.telewebion.ir/tv1plus/live/playlist.m3u8'},
+{name:'NAVA',url:'https://ncdn.telewebion.ir/nava/live/playlist.m3u8'},
+{name:'NAMA',url:'https://ncdn.telewebion.ir/nama/live/playlist.m3u8'},
+
+{name:'URMIA',url:'https://ncdn.telewebion.ir/azarbayjangharbi/live/playlist.m3u8'},
+{name:'SAHAND',url:'https://ncdn.telewebion.ir/sahand/live/playlist.m3u8'},
+{name:'ALBORZ',url:'https://ncdn.telewebion.ir/alborz/live/playlist.m3u8'},
+{name:'ESFAHAN',url:'https://ncdn.telewebion.ir/esfahan/live/playlist.m3u8'},
+{name:'SABALAN',url:'https://ncdn.telewebion.ir/sabalan/live/playlist.m3u8'},
+{name:'ILAM',url:'https://ncdn.telewebion.ir/ilam/live/playlist.m3u8'},
+{name:'BUSHEHR',url:'https://ncdn.telewebion.ir/bushehr/live/playlist.m3u8'},
+{name:'JAHANBIN',url:'https://ncdn.telewebion.ir/jahanbin/live/playlist.m3u8'},
+{name:'ABADAN',url:'https://ncdn.telewebion.ir/abadan/live/playlist.m3u8'},
+{name:'KH.RAZAVI',url:'https://ncdn.telewebion.ir/khorasanrazavi/live/playlist.m3u8'},
+{name:'ATRAK',url:'https://ncdn.telewebion.ir/atrak/live/playlist.m3u8'},
+{name:'KHALIJFARS',url:'https://ncdn.telewebion.ir/khalijefars/live/playlist.m3u8'},
+{name:'KHOZESTAN',url:'https://ncdn.telewebion.ir/khoozestan/live/playlist.m3u8'},
+{name:'ESHRAGH',url:'https://ncdn.telewebion.ir/eshragh/live/playlist.m3u8'},
+{name:'SEMNAN',url:'https://ncdn.telewebion.ir/semnan/live/playlist.m3u8'},
+{name:'HAMON',url:'https://ncdn.telewebion.ir/hamoon/live/playlist.m3u8'},
+{name:'FARS',url:'https://ncdn.telewebion.ir/fars/live/playlist.m3u8'},
+{name:'GHAZVIN',url:'https://ncdn.telewebion.ir/qazvin/live/playlist.m3u8'},
+{name:'NOOR',url:'https://ncdn.telewebion.ir/noor/live/playlist.m3u8'},
+{name:'LORESTAN',url:'https://ncdn.telewebion.ir/aflak/live/playlist.m3u8'},
+{name:'KERMAN',url:'https://ncdn.telewebion.ir/kerman/live/playlist.m3u8'},
+{name:'ZAGROS',url:'https://ncdn.telewebion.ir/zagros/live/playlist.m3u8'},
+{name:'DENA',url:'https://ncdn.telewebion.ir/dena/live/playlist.m3u8'},
+{name:'KISH',url:'https://ncdn.telewebion.ir/kish/live/playlist.m3u8'},
+{name:'GOLESTAN',url:'https://ncdn.telewebion.ir/sabz/live/playlist.m3u8'},
+{name:'BARAN',url:'https://ncdn.telewebion.ir/baran/live/playlist.m3u8'},
+{name:'KORDESTAN',url:'https://ncdn.telewebion.ir/kordestan/live/playlist.m3u8'},
+{name:'YAZD',url:'https://ncdn.telewebion.ir/taban/live/playlist.m3u8'},
+{name:'TABARESTAN',url:'https://ncdn.telewebion.ir/tabarestan/live/playlist.m3u8'},
+{name:'AFTAB',url:'https://ncdn.telewebion.ir/aftab/live/playlist.m3u8'},
+{name:'MAHABAD',url:'https://ncdn.telewebion.ir/mahabad/live/playlist.m3u8'},
+{name:'HAMADAN',url:'https://ncdn.telewebion.ir/sina/live/playlist.m3u8'},
+{name:'KHAVARAN',url:'https://ncdn.telewebion.ir/khavaran/live/playlist.m3u8'},
+
+{name:'Radio Ava',url:'https://ncdn.telewebion.ir/radioava/live/playlist.m3u8'},
+{name:'Radio Namayesh',url:'https://ncdn.telewebion.ir/radionamayesh/live/playlist.m3u8'},
+{name:'Radio Tehran',url:'https://ncdn.telewebion.ir/radiotehran/live/playlist.m3u8'},
+{name:'Radio Iran',url:'https://ncdn.telewebion.ir/radioiran/live/playlist.m3u8'}
+
+],
+
+ifilm:[
+
+{name:'iFilm Farsi',url:'https://live.presstv.ir/hls/ifilmfa.m3u8'},
+{name:'iFilm Dari',url:'https://live.presstv.ir/hls/ifilm2.m3u8'},
+{name:'iFilm English',url:'https://live.presstv.ir/hls/ifilmen.m3u8'},
+{name:'iFilm Arabic',url:'https://live.presstv.ir/hls/ifilmar.m3u8'}
+
+]
+
+};
+
+function render(filter){
+
+currentFilter = filter;
+
+const container =
+document.getElementById('channelContainer');
+
+let html = '';
+
+for(const cat in channels){
+
+if(filter && filter !== cat){
+continue;
+}
+
+html += `
+<div class="category-title">
+${cat.toUpperCase()}
+</div>
+`;
+
+channels[cat].forEach(ch=>{
+
+html += `
+<div class="channel-item"
+onclick="play('${ch.url}','${ch.name}')">
+${ch.name}
+</div>
+`;
+
+});
+
+}
+
+container.innerHTML = html;
+
+}
+
+function play(url,name){
+
+current = {url,name};
+
+document.getElementById('title').innerText = name;
+
+if(hls){
+
+try{
+hls.destroy();
+}catch(e){}
+
+}
+
+const wrap =
+document.getElementById('playerWrap');
+
+wrap.innerHTML = `
+<div class="error-msg">
+<div class="spinner"></div>
+<div>Laddar ${name}...</div>
+</div>
+`;
+
+setTimeout(()=>{
+
+wrap.innerHTML = `
+<video
+id="video"
+controls
+autoplay
+playsinline
+webkit-playsinline
+x5-playsinline>
+</video>
+`;
+
+const video =
+document.getElementById('video');
+
+if(Hls.isSupported() && !isiOS){
+
+hls = new Hls({
+
+enableWorker:false,
+lowLatencyMode:false,
+
+maxBufferLength:10,
+maxMaxBufferLength:20,
+maxBufferSize:20*1000*1000,
+
+fragLoadingMaxRetry:5,
+manifestLoadingMaxRetry:5,
+levelLoadingMaxRetry:5,
+
+startLevel:0
+
+});
+
+hls.loadSource(url);
+
+hls.attachMedia(video);
+
+hls.on(Hls.Events.MANIFEST_PARSED,function(){
+
+video.play().catch(()=>{});
+
+});
+
+}else{
+
+video.src = url;
+
+video.muted = true;
+
+const p = video.play();
+
+if(p !== undefined){
+
+p.then(()=>{
+
+video.muted = false;
+
+}).catch(()=>{});
+
+}
+
+}
+
+},300);
+
+}
+
+function reload(){
+
+if(current){
+
+play(current.url,current.name);
+
+}
+
+}
+
+function fullscreenPlayer(){
+
+const video =
+document.getElementById('video');
+
+if(video){
+
+if(video.requestFullscreen){
+
+video.requestFullscreen();
+
+}
+
+}
+
+}
+
+function showAll(btn){
+
+document.querySelectorAll('.nav-btn')
+.forEach(b=>b.classList.remove('active'));
+
+btn.classList.add('active');
+
+render(null);
+
+}
+
+function filterCategory(btn,cat){
+
+document.querySelectorAll('.nav-btn')
+.forEach(b=>b.classList.remove('active'));
+
+btn.classList.add('active');
+
+render(cat);
+
+}
+
+render();
+
 </script>
+
 </body>
 </html>
