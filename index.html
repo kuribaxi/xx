@@ -200,6 +200,41 @@
     body.tv-mode.tv-idle video { cursor: none; }
     #tvNavBar { transition: transform .28s ease, opacity .28s; }
 
+    /* ============================================================
+       ===== TV-KANALNAMN-BADGE (övre höger hörn) =====
+       ============================================================ */
+    #tvChanName {
+      position: fixed;
+      top: 14px; right: 16px;
+      z-index: 5200;
+      background: rgba(6,20,25,.85);
+      border: 2px solid #4ecca3;
+      border-radius: 14px;
+      padding: 10px 18px;
+      font-size: 1.1rem; font-weight: 800; color: #4ecca3;
+      display: none;
+      flex-direction: column; align-items: flex-end; gap: 3px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.6), 0 0 18px rgba(78,204,163,.25);
+      pointer-events: none;
+      max-width: min(60vw, 520px);
+      transition: opacity .35s, transform .35s;
+    }
+    #tvChanName .tvChanTag {
+      font-size: 0.62rem; font-weight: 800; color: #7fae9d;
+      letter-spacing: 1.5px; text-transform: uppercase;
+    }
+    #tvChanName #tvChanNameText {
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    body.tv-mode #tvChanName { display: flex; }
+    /* Göms tillsammans med toolbaren vid inaktivitet */
+    body.tv-mode.tv-idle #tvChanName {
+      opacity: 0;
+      transform: translateX(130%);
+      pointer-events: none;
+    }
+
     /* Kanal-overlay i TV-läge */
     #tvOverlay {
       position: fixed;
@@ -356,6 +391,12 @@
 <div id="tvClock">
   <div class="tvClockTime" id="tvClockDisplay">--:--:--</div>
   <div class="tvClockDate" id="tvClockDate">Laddar...</div>
+</div>
+
+<!-- ===== TV-KANALNAMN (övre höger) ===== -->
+<div id="tvChanName">
+  <div class="tvChanTag" id="tvChanTag">LIVE</div>
+  <div id="tvChanNameText">Ingen kanal</div>
 </div>
 
 <!-- ===== TV-TOOLBAR ===== -->
@@ -790,6 +831,7 @@
     cur = {url, name, referer: referer || ''};
     retryCount = 0;
     document.getElementById('ch-title').textContent = name;
+    updateTvChanName();
     destroyPlayers();
     const wrap = document.getElementById('vwrap');
     wrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><div class="spinner"></div><span style="margin-left:12px;">Laddar ${escHtml(name)}…</span></div>`;
@@ -987,6 +1029,7 @@
         document.documentElement.requestFullscreen().catch(()=>{});
     }catch(e){}
     tvUiWake();
+    updateTvChanName();
     renderTvOvTabs();
     renderTvOvGrid();
     if (cur) reload();
@@ -1111,6 +1154,27 @@
       if (document.body.classList.contains('tv-mode')) tvUiWake();
     }, {passive:true});
   });
+
+  /* ============================================================
+     ===== TV-KANALNAMN-BADGE (övre höger hörn i TV-läge) =====
+     ============================================================ */
+  function updateTvChanName(){
+    const nameEl = document.getElementById('tvChanNameText');
+    const tagEl  = document.getElementById('tvChanTag');
+    if (!nameEl) return;
+    if (cur){
+      nameEl.textContent = cur.name;
+      let tag = 'LIVE · HLS';
+      for (const k of Object.keys(channels)){
+        const ch = channels[k].find(c => c.url === cur.url);
+        if (ch){ tag = 'LIVE · ' + k.toUpperCase(); break; }
+      }
+      if (tagEl) tagEl.textContent = tag;
+    } else {
+      nameEl.textContent = 'Ingen kanal';
+      if (tagEl) tagEl.textContent = 'LIVE';
+    }
+  }
 
   /* -------- Klocka -------- */
   function updateTvClock(){
@@ -1267,6 +1331,7 @@
   })();
 
   render(null, null);
+  updateTvChanName();
 </script>
 </body>
 </html>
