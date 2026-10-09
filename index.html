@@ -227,7 +227,7 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       max-width: 100%;
     }
-    body.tv-mode #tvChanName { display: flex; }
+    body.tv-mode #tvChanName { display: flex !important; }
     /* Göms tillsammans med toolbaren vid inaktivitet */
     body.tv-mode.tv-idle #tvChanName {
       opacity: 0;
@@ -1037,6 +1037,9 @@
   function exitTvMode(){
     document.body.classList.remove('tv-mode','tv-idle','tv-overlay-open');
     tvMode = false;
+    /* Dölj kanalnamn-badgen igen */
+    const box = document.getElementById('tvChanName');
+    if (box) box.style.display = '';
     const btn = document.getElementById('tv-btn');
     if (btn) btn.textContent = '📺 TV-läge';
     try{
@@ -1161,23 +1164,41 @@
   function updateTvChanName(){
     const nameEl = document.getElementById('tvChanNameText');
     const tagEl  = document.getElementById('tvChanTag');
+    const box    = document.getElementById('tvChanName');
     if (!nameEl) return;
     if (cur){
       nameEl.textContent = cur.name;
-      let tag = 'LIVE · HLS';
+      /* Tag: gruppnamn om kanalen hittas, annars kategori */
+      let tag = 'LIVE · TELEWEBION';
       for (const k of Object.keys(channels)){
         const ch = channels[k].find(c => c.url === cur.url);
-        if (ch){ tag = 'LIVE · ' + k.toUpperCase(); break; }
+        if (ch){
+          if (k === 'ifilm') tag = 'LIVE · iFILM';
+          else if (ch.subgroup){
+            const sg = subgroups.telewebion.find(s => s.key === ch.subgroup);
+            tag = 'LIVE · ' + (sg ? sg.label.toUpperCase() : k.toUpperCase());
+          } else tag = 'LIVE · ' + k.toUpperCase();
+          break;
+        }
+      }
+      /* I egen lista? */
+      for (const g of lists){
+        if (g.items.some(x => x.url === cur.url)){ tag = 'LIVE · 📁 ' + g.name.toUpperCase(); break; }
       }
       if (tagEl) tagEl.textContent = tag;
     } else {
       nameEl.textContent = 'Ingen kanal';
       if (tagEl) tagEl.textContent = 'LIVE';
     }
+    /* Säkerställ att badgen är synlig i TV-läge (JS-styrd, garanterat) */
+    if (box && document.body.classList.contains('tv-mode')){
+      if (box.style.display !== 'flex') box.style.display = 'flex';
+    }
   }
 
   /* -------- Klocka -------- */
   function updateTvClock(){
+    updateTvChanName(); /* håll kanalnamn-badgen uppdaterad varje sekund */
     const timeEl = document.getElementById('tvClockDisplay');
     const dateEl = document.getElementById('tvClockDate');
     if (!timeEl) return;
