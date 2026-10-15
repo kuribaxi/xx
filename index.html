@@ -80,21 +80,15 @@
       top: 110px;      /* under kanalnamn-badgen i övre höger hörn */
       bottom: 110px;   /* över spelarens ljud-/fullskärmskontroller i nedre höger hörn */
       display: none;
-      flex-direction: column;
-      gap: 8px;
-      padding: 12px 10px;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
       background: rgba(6,20,25,.92);
       border: 3px solid #4ecca3;
       border-radius: 26px;
       box-shadow: 0 10px 40px rgba(0,0,0,.8), 0 0 20px rgba(78,204,163,.25);
       z-index: 5300;
       transition: transform .28s ease, opacity .28s;
-      flex-wrap: nowrap;
-      justify-content: center;
-      max-height: none;
-      overflow-y: auto;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       backdrop-filter: blur(10px);
       opacity: 0;
@@ -106,6 +100,19 @@
       display: flex;
       opacity: 1;
       pointer-events: auto;
+    }
+    /* Inre wrapper – skalas automatiskt så att ALLT syns oavsett zoom */
+    #tvNavInner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 8px;
+      flex: 0 0 auto;
+      transform: scale(1);
+      transform-origin: center center;
+      transition: transform .2s ease;
+      box-sizing: border-box;
     }
     .tvNavBtn {
       display: flex; align-items: center; gap: 8px;
@@ -168,9 +175,8 @@
         width: auto !important; max-width: calc(100vw - 12px);
         max-height: none;
         border-radius: 22px;
-        padding: 8px 6px;
-        gap: 5px;
       }
+      #tvNavInner { gap: 5px; padding: 8px 6px; }
       .tvNavBtn { padding: 8px 10px; font-size: 12px; min-height: 42px; min-width: 42px; gap: 4px; }
       .tvNavBtn .kbd { display: none !important; }
       .tvNavBtn > span:not(.kbd) { display: none !important; }
@@ -427,6 +433,7 @@
 
 <!-- ===== TV-TOOLBAR (VERTIKAL, HÖGER SIDA) ===== -->
 <div id="tvNavBar" role="toolbar" aria-label="TV navigering">
+ <div id="tvNavInner">
   <button class="tvNavBtn" id="tvPrevBtn" title="Föregående kanal">⏮ <span class="kbd">◀</span></button>
   <button class="tvNavBtn primary" id="tvListBtn" title="Öppna kanallista">📺 <span>Kanaler</span> <span class="kbd">OK</span></button>
   <button class="tvNavBtn" id="tvAddBtn" title="Ny lista / lägg kanalen i lista">➕ <span class="kbd">A</span></button>
@@ -441,6 +448,7 @@
   <button class="tvNavBtn" id="tvFsBtn" title="Fullskärm av/på">⛶ <span class="kbd">F</span></button>
   <button class="tvNavBtn" id="tvJsBtn" title="JS-motor av/på">⚡ <span class="kbd">J</span></button>
   <button class="tvNavBtn" id="tvExitBtn" title="Avsluta TV-läge">✖ <span class="kbd">Esc</span></button>
+ </div>
 </div>
 
 <!-- ===== TV-KANAL-OVERLAY ===== -->
@@ -1065,6 +1073,8 @@
     updateTvChanName();
     renderTvOvTabs();
     renderTvOvGrid();
+    fitTvNavBar();
+    setTimeout(fitTvNavBar, 200);
     if (cur) reload();
   }
   function exitTvMode(){
@@ -1324,6 +1334,33 @@
   setInterval(() => {
     if (document.body.classList.contains('tv-mode')) tvVolUpdate();
   }, 800);
+
+  /* ==== Auto-skala toolbaren så ALLT syns oavsett zoom ==== */
+  function fitTvNavBar(){
+    const bar = document.getElementById('tvNavBar');
+    const inner = document.getElementById('tvNavInner');
+    if (!bar || !inner) return;
+    if (!document.body.classList.contains('tv-mode')) return;
+    inner.style.transform = 'scale(1)';
+    const availH = bar.clientHeight - 4;
+    const availW = bar.clientWidth - 4;
+    if (availH <= 0) return;
+    const needH = inner.offsetHeight;
+    const needW = inner.offsetWidth;
+    let s = 1;
+    if (needH > availH) s = Math.min(s, availH / needH);
+    if (needW > availW) s = Math.min(s, availW / needW);
+    s = Math.max(0.3, Math.round(s * 100) / 100);
+    inner.style.transform = 'scale(' + s + ')';
+  }
+  window.addEventListener('resize', fitTvNavBar);
+  window.addEventListener('orientationchange', () => setTimeout(fitTvNavBar, 300));
+  setInterval(fitTvNavBar, 1000);
+  document.addEventListener('fullscreenchange', () => setTimeout(fitTvNavBar, 200));
+  document.addEventListener('webkitfullscreenchange', () => setTimeout(fitTvNavBar, 200));
+  if (window.visualViewport){
+    window.visualViewport.addEventListener('resize', fitTvNavBar);
+  }
 
   /* -------- Toolbar-knappar -------- */
   document.getElementById('tvPrevBtn').onclick = () => tvAdjacent(-1);
