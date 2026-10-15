@@ -72,26 +72,28 @@
     body.tv-mode video { object-fit: contain; }
 
     /* ============================================================
-       ===== TV-TOOLBAR =====
+       ===== TV-TOOLBAR – VERTIKAL PÅ HÖGER SIDA =====
        ============================================================ */
     #tvNavBar {
       position: fixed;
-      left: 50%; bottom: 18px;
-      transform: translateX(-50%);
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
       display: none;
-      gap: 10px;
-      padding: 10px 14px;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px 10px;
       background: rgba(6,20,25,.92);
       border: 3px solid #4ecca3;
-      border-radius: 999px;
+      border-radius: 26px;
       box-shadow: 0 10px 40px rgba(0,0,0,.8), 0 0 20px rgba(78,204,163,.25);
       z-index: 5300;
       transition: transform .28s ease, opacity .28s;
       flex-wrap: nowrap;
       justify-content: flex-start;
-      max-width: min(96vw, 1100px);
-      overflow-x: auto;
-      overflow-y: hidden;
+      max-height: min(92vh, 780px);
+      overflow-y: auto;
+      overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       backdrop-filter: blur(10px);
@@ -102,7 +104,7 @@
     #tvNavBar::-webkit-scrollbar { display: none; }
     body.tv-mode #tvNavBar {
       display: flex;
-      transform: translateX(-50%) translateY(0);
+      transform: translateY(-50%);
       opacity: 1;
       pointer-events: auto;
     }
@@ -130,29 +132,57 @@
     }
     .tvNavBtn.primary .kbd { color: #04120d; background: rgba(255,255,255,.25); border-color: transparent; }
 
-    /* Mobil: toolbaren inom skärmkanten */
+    /* ===== Ljudkontroller i vertikal toolbar ===== */
+    .tvVolGroup {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: rgba(0,0,0,.35);
+      border: 2px solid #234852;
+      border-radius: 18px;
+      padding: 6px 4px;
+      flex-shrink: 0;
+    }
+    #tvVolLevel {
+      font-size: 11px; font-weight: 800; color: #4ecca3;
+      letter-spacing: 1px; white-space: nowrap; cursor: pointer;
+      background: rgba(78,204,163,.12);
+      border: 1px solid rgba(78,204,163,.35);
+      border-radius: 10px;
+      padding: 2px 8px;
+      text-align: center;
+      min-width: 56px;
+    }
+    #tvVolLevel:hover { background: rgba(78,204,163,.25); }
+    .tvVolGroup .tvNavBtn {
+      padding: 8px 12px; min-height: 40px; font-size: 13px;
+    }
+
+    /* Mobil: vertikal toolbar mot höger kant */
     @media (max-width: 768px){
       #tvNavBar {
-        left: 0 !important; right: 0 !important; bottom: 8px !important;
-        width: 100% !important; max-width: 100% !important;
-        transform: none !important;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        padding: 8px 10px;
-        gap: 6px;
-        justify-content: flex-start;
-        box-sizing: border-box;
+        right: 6px !important;
+        left: auto !important;
+        top: 50% !important; bottom: auto !important;
+        transform: translateY(-50%) !important;
+        width: auto !important; max-width: calc(100vw - 12px);
+        max-height: 80vh;
+        border-radius: 22px;
+        padding: 8px 6px;
+        gap: 5px;
       }
-      .tvNavBtn { padding: 9px 12px; font-size: 12px; min-height: 44px; min-width: 44px; gap: 6px; }
+      .tvNavBtn { padding: 8px 10px; font-size: 12px; min-height: 42px; min-width: 42px; gap: 4px; }
       .tvNavBtn .kbd { display: none !important; }
       .tvNavBtn > span:not(.kbd) { display: none !important; }
       .tvNavBtn.primary > span:not(.kbd) { display: inline !important; }
-      body.tv-mode.tv-idle #tvNavBar { transform: translateY(140%) !important; }
+      .tvVolGroup { padding: 4px 2px; }
+      #tvVolLevel { min-width: 46px; font-size: 10px; }
+      body.tv-mode.tv-idle #tvNavBar { transform: translate(130%, -50%) !important; }
     }
 
     /* ============================================================
-       ===== TV-KLOCKA (tid + datum, transparent) =====
+       ===== TV-KLOCKA (tid + datum, transparent, färg/minut) =====
        ============================================================ */
     #tvClock {
       position: fixed;
@@ -175,7 +205,7 @@
       font-family: 'Courier New', monospace; font-weight: 800; font-size: 1.4rem;
       letter-spacing: 2px; color: #4ecca3;
       white-space: nowrap; line-height: 1.1;
-      transition: font-size .4s ease, letter-spacing .4s ease;
+      transition: font-size .4s ease, letter-spacing .4s ease, color .8s ease, text-shadow .8s ease;
     }
     #tvClock .tvClockDate {
       font-size: 0.8rem; font-weight: 700; color: #e0ffef;
@@ -192,10 +222,7 @@
     /* Dölj UI vid inaktivitet */
     body.tv-mode.tv-idle #tvNavBar {
       opacity: 0; pointer-events: none;
-      transform: translateY(140%);
-    }
-    @media (min-width: 769px){
-      body.tv-mode.tv-idle #tvNavBar { transform: translateX(-50%) translateY(140%); }
+      transform: translate(120%, -50%);
     }
     body.tv-mode.tv-idle video { cursor: none; }
     #tvNavBar { transition: transform .28s ease, opacity .28s; }
@@ -266,7 +293,7 @@
     }
     #tvOverlay .tvOvTitle .cnt { font-size: 13px; color: #7fae9d; font-weight: 600; }
 
-    /* ===== NYTT: flikar i kanal-overlay ===== */
+    /* ===== flikar i kanal-overlay ===== */
     #tvOvTabs {
       display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto;
       padding: 10px 16px;
@@ -399,7 +426,7 @@
   <div id="tvChanNameText">Ingen kanal</div>
 </div>
 
-<!-- ===== TV-TOOLBAR ===== -->
+<!-- ===== TV-TOOLBAR (VERTIKAL, HÖGER SIDA) ===== -->
 <div id="tvNavBar" role="toolbar" aria-label="TV navigering">
   <button class="tvNavBtn" id="tvPrevBtn" title="Föregående kanal">⏮ <span class="kbd">◀</span></button>
   <button class="tvNavBtn primary" id="tvListBtn" title="Öppna kanallista">📺 <span>Kanaler</span> <span class="kbd">OK</span></button>
@@ -407,6 +434,11 @@
   <button class="tvNavBtn" id="tvNextBtn" title="Nästa kanal">⏭ <span class="kbd">▶</span></button>
   <button class="tvNavBtn" id="tvReloadBtn2" title="Ladda om kanal">🔄 <span class="kbd">R</span></button>
   <button class="tvNavBtn" id="tvClockBtn" title="Visa/göm klockan">🕐 <span class="kbd">K</span></button>
+  <div class="tvVolGroup" role="group" aria-label="Ljudkontroll">
+    <button class="tvNavBtn" id="tvVolUpBtn" title="Öka ljud">🔊 <span class="kbd">+</span></button>
+    <div id="tvVolLevel" title="Klicka för tyst/på">🔊 100%</div>
+    <button class="tvNavBtn" id="tvVolDownBtn" title="Minska ljud">🔉 <span class="kbd">−</span></button>
+  </div>
   <button class="tvNavBtn" id="tvFsBtn" title="Fullskärm av/på">⛶ <span class="kbd">F</span></button>
   <button class="tvNavBtn" id="tvJsBtn" title="JS-motor av/på">⚡ <span class="kbd">J</span></button>
   <button class="tvNavBtn" id="tvExitBtn" title="Avsluta TV-läge">✖ <span class="kbd">Esc</span></button>
@@ -473,7 +505,7 @@
           { name: 'SEMNAN',     url: 'https://ncdn.telewebion.ir/semnan/live/playlist.m3u8',           icon: '🏜️' },
           { name: 'HAMON',      url: 'https://ncdn.telewebion.ir/hamoon/live/playlist.m3u8',           icon: '🏞️' },
           { name: 'FARS',       url: 'https://ncdn.telewebion.ir/fars/live/playlist.m3u8',             icon: '🏛️' },
-          { name: 'GHAZVIN',    url: 'https://ncdn.telewebion.ir/qazvin/live/playlist.m3u8',           icon: '🏛️' },
+          { name: 'GHAZVIN',    url: 'https://ncdn.telewebion.ir/qazvin/live/playlist.m3u8',            icon: '🏛️' },
           { name: 'NOOR',       url: 'https://ncdn.telewebion.ir/noor/live/playlist.m3u8',             icon: '💡' },
           { name: 'LORESTAN',   url: 'https://ncdn.telewebion.ir/aflak/live/playlist.m3u8',            icon: '🏞️' },
           { name: 'KERMAN',     url: 'https://ncdn.telewebion.ir/kerman/live/playlist.m3u8',           icon: '🏜️' },
@@ -847,6 +879,7 @@
       wrap.innerHTML = '<video id="vplayer" controls autoplay style="width:100%;height:100%;"></video>';
       const vid = document.getElementById('vplayer');
       vid.src = url;
+      tvVolApply(vid);
       vid.play().catch(() => {
         wrap.innerHTML = `<div class="error-msg"><h3>⚠️ JS AV: Kunde inte spela</h3><p>${escHtml(url.substring(0,70))}</p><button class="btn" onclick="reload()">↻ Försök igen</button></div>`;
       });
@@ -858,6 +891,7 @@
       wrap.innerHTML = '<video id="vplayer" controls autoplay style="width:100%;height:100%;"></video>';
       vid = document.getElementById('vplayer');
     }
+    tvVolApply(vid);
 
     document.removeEventListener('visibilitychange', onVisibilityChange);
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -941,7 +975,7 @@
   function fs() { const w=document.getElementById('vwrap'); document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen().catch(()=>{}); }
 
   /* ============================================================
-     ===== NYTT: EGNA LISTOR (skapa + lägg till kanal) =====
+     ===== EGNA LISTOR (skapa + lägg till kanal) =====
      ============================================================ */
   let lists = [];
   try { lists = JSON.parse(localStorage.getItem('xom_lists') || '[]'); } catch(e) { lists = []; }
@@ -1037,7 +1071,6 @@
   function exitTvMode(){
     document.body.classList.remove('tv-mode','tv-idle','tv-overlay-open');
     tvMode = false;
-    /* Dölj kanalnamn-badgen igen */
     const box = document.getElementById('tvChanName');
     if (box) box.style.display = '';
     const btn = document.getElementById('tv-btn');
@@ -1168,7 +1201,6 @@
     if (!nameEl) return;
     if (cur){
       nameEl.textContent = cur.name;
-      /* Tag: gruppnamn om kanalen hittas, annars kategori */
       let tag = 'LIVE · TELEWEBION';
       for (const k of Object.keys(channels)){
         const ch = channels[k].find(c => c.url === cur.url);
@@ -1181,7 +1213,6 @@
           break;
         }
       }
-      /* I egen lista? */
       for (const g of lists){
         if (g.items.some(x => x.url === cur.url)){ tag = 'LIVE · 📁 ' + g.name.toUpperCase(); break; }
       }
@@ -1190,15 +1221,17 @@
       nameEl.textContent = 'Ingen kanal';
       if (tagEl) tagEl.textContent = 'LIVE';
     }
-    /* Säkerställ att badgen är synlig i TV-läge (JS-styrd, garanterat) */
     if (box && document.body.classList.contains('tv-mode')){
       if (box.style.display !== 'flex') box.style.display = 'flex';
     }
   }
 
-  /* -------- Klocka -------- */
+  /* -------- Klocka (byter FÄRG varje minut) -------- */
+  const tvClockColors = ['#4ecca3','#a8ffde','#ffd166','#ff8fa3','#85c1e9','#b8f2a8','#f4a261','#c3aed6','#5bc0eb','#ff6b6b','#7bd389','#e0c3fc'];
+  let tvClockLastColorMin = null;
+
   function updateTvClock(){
-    updateTvChanName(); /* håll kanalnamn-badgen uppdaterad varje sekund */
+    updateTvChanName();
     const timeEl = document.getElementById('tvClockDisplay');
     const dateEl = document.getElementById('tvClockDate');
     if (!timeEl) return;
@@ -1211,6 +1244,14 @@
       const days = ['Sön','Mån','Tis','Ons','Tor','Fre','Lör'];
       const months = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
       dateEl.textContent = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    }
+    /* Byt färg varje minut */
+    const m = now.getMinutes();
+    if (m !== tvClockLastColorMin){
+      tvClockLastColorMin = m;
+      const col = tvClockColors[m % tvClockColors.length];
+      timeEl.style.color = col;
+      timeEl.style.textShadow = '0 0 18px ' + col + 'cc, 0 2px 0 #000';
     }
   }
   updateTvClock();
@@ -1241,6 +1282,49 @@
     else idx = (idx + delta + list.length) % list.length;
     play(list[idx].url, list[idx].name, '');
   }
+
+  /* ============================================================
+     ===== LJUDKONTROLL i TV-läge: öka / minska / mute =====
+     ============================================================ */
+  function tvGetMedia(){
+    return document.getElementById('vplayer');
+  }
+  function tvVolApply(m){
+    if (!m) return;
+    const saved = parseFloat(localStorage.getItem('xom_tvvol'));
+    if (!isNaN(saved)) m.volume = Math.min(1, Math.max(0, saved));
+  }
+  function tvVolUpdate(){
+    const el = document.getElementById('tvVolLevel');
+    if (!el) return;
+    const m = tvGetMedia();
+    const v = m ? Math.round(m.volume*100) : 0;
+    const icon = (v === 0 || (m && m.muted)) ? '🔇' : (v < 50 ? '🔉' : '🔊');
+    el.textContent = icon + ' ' + v + '%';
+  }
+  function tvVolAdj(delta){
+    const m = tvGetMedia();
+    if (!m){ alert('Ingen spelare aktiv'); return; }
+    m.muted = false;
+    m.volume = Math.min(1, Math.max(0, parseFloat((m.volume + delta).toFixed(2))));
+    try{ localStorage.setItem('xom_tvvol', String(m.volume)); }catch(e){}
+    tvVolUpdate();
+    tvUiWake();
+  }
+  function tvVolToggleMute(){
+    const m = tvGetMedia();
+    if (!m){ alert('Ingen spelare aktiv'); return; }
+    m.muted = !m.muted;
+    tvVolUpdate();
+    tvUiWake();
+  }
+  document.getElementById('tvVolUpBtn').onclick = () => tvVolAdj(0.1);
+  document.getElementById('tvVolDownBtn').onclick = () => tvVolAdj(-0.1);
+  document.getElementById('tvVolLevel').onclick = tvVolToggleMute;
+  /* Håll indikatorn uppdaterad */
+  setInterval(() => {
+    if (document.body.classList.contains('tv-mode')) tvVolUpdate();
+  }, 800);
 
   /* -------- Toolbar-knappar -------- */
   document.getElementById('tvPrevBtn').onclick = () => tvAdjacent(-1);
@@ -1282,6 +1366,12 @@
       if (key === 'a' || key === 'A'){ e.preventDefault(); listDialog(); return; }
       return;
     }
+
+    /* Ljud: + / - / M */
+    if (key === '+' || key === '='){ e.preventDefault(); tvVolAdj(0.1); return; }
+    if (key === '-' || key === '_'){ e.preventDefault(); tvVolAdj(-0.1); return; }
+    if (key === 'm' || key === 'M'){ e.preventDefault(); tvVolToggleMute(); return; }
+
     if (key === 'ArrowRight'){ e.preventDefault(); tvAdjacent(1); return; }
     if (key === 'ArrowLeft'){ e.preventDefault(); tvAdjacent(-1); return; }
     if (key === 'Enter' || code === 13){ e.preventDefault(); openTvOverlay(); return; }
@@ -1353,6 +1443,7 @@
 
   render(null, null);
   updateTvChanName();
+  tvVolUpdate();
 </script>
 </body>
 </html>
